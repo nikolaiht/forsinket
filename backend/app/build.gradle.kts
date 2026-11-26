@@ -19,11 +19,16 @@ application {
 dependencies {
     implementation(project(":domain"))
     implementation(libs.serialization.json)
+    implementation(libs.hikari)
+    implementation(libs.flyway.core)
+    runtimeOnly(libs.flyway.postgresql)
+    runtimeOnly(libs.postgresql)
 
     testImplementation(testFixtures(project(":domain")))
     testImplementation(libs.kotest.runner.junit5)
     testImplementation(libs.kotest.assertions.core)
     testImplementation(libs.kotest.property)
+    testImplementation(libs.testcontainers.postgresql)
 }
 
 // The JSON examples both this service and the Elm app are tested against.
