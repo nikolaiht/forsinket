@@ -6,9 +6,12 @@ must write the request examples. The Kotlin half is
 `backend/app/src/test/kotlin/ContractTest.kt`, against the same files.
 -}
 
+import Api
 import Claim
 import Claim.Calculation as Calculation exposing (Assessment(..), ExpenseAssessment(..), Handling(..), TicketValue(..))
-import Claim.Reason exposing (IneligibilityReason(..), ReviewReason(..))
+import Claim.Decision as Decision
+import Claim.Draft as Draft
+import Claim.Reason exposing (IneligibilityReason(..), RejectionReason(..), ReviewReason(..))
 import Contract.Examples as Examples
 import Date
 import Departure exposing (Outcome(..))
@@ -16,6 +19,8 @@ import Example
 import Expect
 import Fixtures
 import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode
+import JsonTree
 import Money
 import Rules
 import Status
@@ -114,6 +119,31 @@ suite =
                   }
                 ]
             ]
+        , describe "requests"
+            [ encodes "a claim for a single ticket"
+                (Draft.encode { departureId = Fixtures.fb16.id, ticket = Fixtures.single349, expenses = Nothing })
+                Examples.claimRequestSingle
+            , encodes "a claim for a period ticket with expenses"
+                (Draft.encode { departureId = Fixtures.fb14.id, ticket = Fixtures.period849, expenses = Just Fixtures.taxi620 })
+                Examples.claimRequestPeriodWithExpenses
+            , encodes "an officer's approval"
+                (Decision.encode 2
+                    { officer = "KN"
+                    , note = "Kvitteringen viser 500 kr."
+                    , verdict = Decision.Approve (Money.fromOre 50000)
+                    }
+                )
+                Examples.decisionRequestApprove
+            , encodes "an officer's rejection"
+                (Decision.encode 2
+                    { officer = "KN"
+                    , note = "Samme reise er allerede erstattet."
+                    , verdict = Decision.Reject DuplicateClaim
+                    }
+                )
+                Examples.decisionRequestReject
+            , encodes "a payout" (Api.encodePayout 2) Examples.payoutRequest
+            ]
         , describe "what the decoders refuse"
             [ refuses "a status the app does not know"
                 Claim.decoder
@@ -160,6 +190,17 @@ decodes name decoder json expected =
             Decode.decodeString decoder json
                 |> Result.mapError Decode.errorToString
                 |> Expect.equal (Ok expected)
+
+
+{-| What an encoder writes is compared with the example as JSON, not as text,
+so the order of the fields does not matter.
+-}
+encodes : String -> Encode.Value -> String -> Test
+encodes name value example =
+    test name <|
+        \_ ->
+            JsonTree.fromValue value
+                |> Expect.equal (JsonTree.fromString example)
 
 
 {-| The replacement must have changed something, or the test would pass for the wrong reason.

@@ -1,6 +1,7 @@
 module Api exposing
     ( Error(..), errorFromResponse
     , getRules, getExamples, getDepartures, getClaim, getClaims
+    , postAssessment, postClaim, postDecision, postPayout, encodePayout
     )
 
 {-| Talking to the service.
@@ -11,10 +12,14 @@ values the service will not accept, a claim someone else got to first.
 
 @docs Error, errorFromResponse
 @docs getRules, getExamples, getDepartures, getClaim, getClaims
+@docs postAssessment, postClaim, postDecision, postPayout, encodePayout
 
 -}
 
 import Claim exposing (Claim)
+import Claim.Calculation as Calculation exposing (Assessment)
+import Claim.Decision as Decision exposing (Decision)
+import Claim.Draft as Draft exposing (NewClaim)
 import Claim.Id as Id exposing (Id)
 import Date exposing (Date)
 import Departure exposing (Departure)
@@ -22,6 +27,7 @@ import Example exposing (Example)
 import FieldError exposing (FieldError)
 import Http
 import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode
 import Rules exposing (Rules)
 import Status
 import Url.Builder as Builder
@@ -147,13 +153,54 @@ getClaims status toMsg =
     get [ "claims" ] parameters (Decode.list Claim.summaryDecoder) toMsg
 
 
+{-| Ask what the rules would say about a claim. Nothing is stored.
+-}
+postAssessment : NewClaim -> (Result Error Assessment -> msg) -> Cmd msg
+postAssessment claim toMsg =
+    post [ "assessments" ] (Draft.encode claim) Calculation.assessmentDecoder toMsg
+
+
+postClaim : NewClaim -> (Result Error Claim -> msg) -> Cmd msg
+postClaim claim toMsg =
+    post [ "claims" ] (Draft.encode claim) Claim.decoder toMsg
+
+
+{-| Every change to a claim says which version of it the change was made on.
+If someone else has changed the claim since, the service answers
+`VersionConflict` and nothing is overwritten.
+-}
+postDecision : Id -> Int -> Decision -> (Result Error Claim -> msg) -> Cmd msg
+postDecision id expectedVersion decision toMsg =
+    post [ "claims", Id.toString id, "decision" ] (Decision.encode expectedVersion decision) Claim.decoder toMsg
+
+
+postPayout : Id -> Int -> (Result Error Claim -> msg) -> Cmd msg
+postPayout id expectedVersion toMsg =
+    post [ "claims", Id.toString id, "payout" ] (encodePayout expectedVersion) Claim.decoder toMsg
+
+
+encodePayout : Int -> Encode.Value
+encodePayout expectedVersion =
+    Encode.object [ ( "expectedVersion", Encode.int expectedVersion ) ]
+
+
 get : List String -> List Builder.QueryParameter -> Decoder a -> (Result Error a -> msg) -> Cmd msg
 get path parameters decoder toMsg =
+    request "GET" (Builder.absolute ("api" :: path) parameters) Http.emptyBody decoder toMsg
+
+
+post : List String -> Encode.Value -> Decoder a -> (Result Error a -> msg) -> Cmd msg
+post path body decoder toMsg =
+    request "POST" (Builder.absolute ("api" :: path) []) (Http.jsonBody body) decoder toMsg
+
+
+request : String -> String -> Http.Body -> Decoder a -> (Result Error a -> msg) -> Cmd msg
+request method url body decoder toMsg =
     Http.request
-        { method = "GET"
+        { method = method
         , headers = []
-        , url = Builder.absolute ("api" :: path) parameters
-        , body = Http.emptyBody
+        , url = url
+        , body = body
         , expect = Http.expectStringResponse toMsg (errorFromResponse decoder)
         , timeout = Just timeoutInMilliseconds
         , tracker = Nothing
