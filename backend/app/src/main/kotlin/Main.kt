@@ -16,9 +16,12 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import java.lang.management.ManagementFactory
 import java.time.Clock
 import java.util.UUID
 import kotlin.system.exitProcess
+import kotlin.time.measureTime
+import kotlin.time.measureTimedValue
 
 /**
  * Where everything is put together. This is the only place that knows which
@@ -30,8 +33,10 @@ fun main() {
         exitProcess(1)
     }
 
-    val dataSource = dataSource(config.database.url, config.database.user, config.database.password)
-    migrate(dataSource)
+    val (dataSource, connecting) = measureTimedValue {
+        dataSource(config.database.url, config.database.user, config.database.password)
+    }
+    val migrating = measureTime { migrate(dataSource) }
 
     val store = PostgresClaimStore(dataSource)
     val clock = Clock.systemUTC()
@@ -46,11 +51,20 @@ fun main() {
         maxClaims = config.demo?.maxClaims,
     )
 
-    config.demo?.let { demo ->
-        runBlocking { prepareDemo(store, traffic, rules, clock.instant(), demo.resetEvery) }
+    val preparingDemo = measureTime {
+        config.demo?.let { demo ->
+            runBlocking { prepareDemo(store, traffic, rules, clock.instant(), demo.resetEvery) }
+        }
     }
 
     embeddedServer(Netty, port = config.port) {
+        // On a host that starts the service for the first visitor after a quiet
+        // spell, this is the time that visitor waits, so it is worth knowing
+        // where it goes.
+        log.info(
+            "Before serving: connecting to the database took $connecting, migrating $migrating, " +
+                "the demo $preparingDemo. The JVM has been up for ${ManagementFactory.getRuntimeMXBean().uptime} ms.",
+        )
         module(service, config.webRoot)
 
         config.demo?.resetEvery?.let { interval ->

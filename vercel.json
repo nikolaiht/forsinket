@@ -1,5 +1,21 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "container",
-  "regions": ["fra1"]
+  "regions": ["fra1"],
+  "services": {
+    "web": {
+      "root": "frontend/",
+      "buildCommand": "npm run build",
+      "outputDirectory": "dist",
+      "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+    },
+    "api": {
+      "root": "./",
+      "entrypoint": "Dockerfile"
+    }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": { "service": "api" } },
+    { "source": "/health", "destination": { "service": "api" } },
+    { "source": "/(.*)", "destination": { "service": "web" } }
+  ]
 }

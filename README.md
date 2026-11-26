@@ -2,6 +2,8 @@
 
 A demo: passengers claim compensation for a delayed or cancelled train, and the app shows how the amount was worked out. The train operator is made up. The frontend is written in Elm and the backend in Kotlin.
 
+**Try it: [forsinket.vercel.app](https://forsinket.vercel.app)**
+
 [![ci](https://github.com/nikolaiht/forsinket/actions/workflows/ci.yml/badge.svg)](https://github.com/nikolaiht/forsinket/actions/workflows/ci.yml)
 
 ![A paid-out claim: the status, the calculation set out step by step like a receipt, the journey, and the record of what has happened](docs/screenshot.png)
@@ -22,7 +24,7 @@ The operator, Tindbanen, is made up. The rules are made up for the demo and are 
 docker compose up --build
 ```
 
-That is all it needs: Docker. The app is then on [http://localhost:8080](http://localhost:8080), with six demo claims in it. It is not hosted anywhere yet, so this is the way to see it. There are three places to start:
+That is all it needs: Docker. The app is then on [http://localhost:8080](http://localhost:8080), with six demo claims in it. There are three places to start, here and on [the hosted copy](https://forsinket.vercel.app):
 
 - **[The front page](http://localhost:8080/)** says what a passenger is owed, with four worked examples.
 - **[Meld krav](http://localhost:8080/krav/nytt)** is the claim form. Pick a departure and a ticket, and the calculation appears before the claim is submitted.
