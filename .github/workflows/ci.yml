@@ -53,8 +53,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: build the image and start the app with its database
-        run: docker compose up --build --detach --wait
+      - uses: docker/setup-buildx-action@v4
+      - name: build the image, with the layers that have not changed kept from the last run
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          load: true
+          tags: forsinket:local
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: start the app with its database
+        run: docker compose up --detach --wait --no-build
       - name: walk two claims through the running app
         run: ./scripts/smoke.sh
       - name: logs, if something went wrong

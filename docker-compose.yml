@@ -23,6 +23,9 @@ services:
 
   app:
     build: .
+    # A name for the image, so that CI can build it first, with its layers
+    # kept from the last run, and then start it here without building again.
+    image: forsinket:local
     depends_on:
       db:
         condition: service_healthy
