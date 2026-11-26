@@ -25,26 +25,33 @@ view zone claim =
         [ section [ class "claim__status" ]
             (View.Status.badge (Claim.statusName claim.status) :: standing zone claim.status)
         , div [ class "claim__columns" ]
-            [ div []
-                [ case calculationOf claim.status of
-                    Just calculation ->
-                        section []
-                            [ h2 [] [ text "Slik er beløpet regnet ut" ]
-                            , View.Calculation.view calculation
-                            ]
+            (let
+                journeySection : Html msg
+                journeySection =
+                    section []
+                        [ h2 [] [ text "Reisen" ]
+                        , journey claim
+                        ]
 
-                    Nothing ->
-                        text ""
-                , section []
-                    [ h2 [] [ text "Reisen" ]
-                    , journey claim
+                historySection : Html msg
+                historySection =
+                    section []
+                        [ h2 [] [ text "Dette har skjedd" ]
+                        , View.History.view zone claim.history
+                        ]
+             in
+             case calculationOf claim.status of
+                Just calculation ->
+                    [ section []
+                        [ h2 [] [ text "Slik er beløpet regnet ut" ]
+                        , View.Calculation.view calculation
+                        ]
+                    , div [] [ journeySection, historySection ]
                     ]
-                ]
-            , section []
-                [ h2 [] [ text "Dette har skjedd" ]
-                , View.History.view zone claim.history
-                ]
-            ]
+
+                Nothing ->
+                    [ journeySection, historySection ]
+            )
         ]
 
 
