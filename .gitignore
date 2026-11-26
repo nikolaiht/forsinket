@@ -9,7 +9,6 @@ frontend/dist/
 
 # Local environment
 .env*
-.vercel
 .DS_Store
 .idea/
 *.iml
