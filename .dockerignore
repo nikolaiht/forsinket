@@ -1,0 +1,12 @@
+.git
+.github
+.tools
+.superpowers
+docs
+**/build
+**/.gradle
+**/.kotlin
+**/node_modules
+frontend/dist
+frontend/elm-stuff
+frontend/review/elm-stuff
