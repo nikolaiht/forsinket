@@ -2,6 +2,7 @@ package io.github.nikolaiht.forsinket.app.json
 
 import io.github.nikolaiht.forsinket.app.ClaimSnapshot
 import io.github.nikolaiht.forsinket.app.ClaimSummary
+import io.github.nikolaiht.forsinket.app.Example
 import io.github.nikolaiht.forsinket.domain.Assessment
 import io.github.nikolaiht.forsinket.domain.ClaimDraft
 import io.github.nikolaiht.forsinket.domain.ClaimEvent
@@ -172,6 +173,15 @@ data class SummaryDto(
     val total: Long?,
 )
 
+/** A worked example for the front page: what a passenger had, what happened, and what the rules say. */
+@Serializable
+data class ExampleDto(
+    val ticket: TicketDto,
+    val expenses: ExpensesDto?,
+    val outcome: OutcomeDto,
+    val assessment: AssessmentDto,
+)
+
 @Serializable
 data class ClaimRequestDto(
     val departureId: String,
@@ -331,6 +341,9 @@ private fun ClaimEvent.toHistoryEntry(): HistoryEntryDto =
         is ClaimEvent.PayoutRecorded ->
             HistoryEntryDto.PayoutRecorded(at.toString())
     }
+
+fun Example.toDto(): ExampleDto =
+    ExampleDto(ticket.toDto(), expenses?.toDto(), outcome.toDto(), assessment.toDto())
 
 fun ClaimSummary.toDto(): SummaryDto =
     SummaryDto(
