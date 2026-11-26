@@ -15,6 +15,7 @@ module Contract.Examples exposing
     , decisionRequestReject
     , departures
     , errorDemoLimitReached
+    , errorInternalError
     , errorInvalidTransition
     , errorMalformedRequest
     , errorNotFound
@@ -58,63 +59,63 @@ assessmentNotEligible =
 -}
 claimRequestPeriodWithExpenses : String
 claimRequestPeriodWithExpenses =
-    """{"departureId":"2026-11-20-FB14","ticket":{"type":"period","price":84900,"validityDays":30},"expenses":{"amount":62000,"kind":"taxi"}}"""
+    """{"departureId":"2026-11-20-TB14","ticket":{"type":"period","price":84900,"validityDays":30},"expenses":{"amount":62000,"kind":"taxi"}}"""
 
 
 {-| contract/examples/claim-request.single.json
 -}
 claimRequestSingle : String
 claimRequestSingle =
-    """{"departureId":"2026-11-20-FB16","ticket":{"type":"single","price":34900},"expenses":null}"""
+    """{"departureId":"2026-11-20-TB16","ticket":{"type":"single","price":34900},"expenses":null}"""
 
 
 {-| contract/examples/claim.approved-automatically.json
 -}
 claimApprovedAutomatically : String
 claimApprovedAutomatically =
-    """{"id":"0a6f3c1e-5b7d-4e2a-9c41-7d2f8b3e6a10","version":2,"submittedAt":"2026-11-21T09:15:00Z","departure":{"id":"2026-11-20-FB16","date":"2026-11-20","trainNumber":"FB16","origin":"Storhavn","destination":"Fjordvik","scheduledDeparture":"16:42","outcome":{"type":"ran","delayMinutes":61}},"ticket":{"type":"single","price":34900},"expenses":null,"status":{"type":"approved","calculation":{"ruleSetVersion":"v1","ticketValue":{"type":"full_price","value":34900},"outcome":{"type":"ran","delayMinutes":61},"percent":50,"ticketCompensation":17450,"expenses":{"type":"none_claimed"},"total":17450},"by":{"type":"rules"},"decidedAt":"2026-11-21T09:15:00Z"},"history":[{"type":"submitted","at":"2026-11-21T09:15:00Z"},{"type":"approved_automatically","at":"2026-11-21T09:15:00Z"}]}"""
+    """{"id":"0a6f3c1e-5b7d-4e2a-9c41-7d2f8b3e6a10","version":2,"submittedAt":"2026-11-21T09:15:00Z","departure":{"id":"2026-11-20-TB16","date":"2026-11-20","trainNumber":"TB16","origin":"Storhavn","destination":"Fjordvik","scheduledDeparture":"16:42","outcome":{"type":"ran","delayMinutes":61}},"ticket":{"type":"single","price":34900},"expenses":null,"status":{"type":"approved","calculation":{"ruleSetVersion":"v1","ticketValue":{"type":"full_price","value":34900},"outcome":{"type":"ran","delayMinutes":61},"percent":50,"ticketCompensation":17450,"expenses":{"type":"none_claimed"},"total":17450},"by":{"type":"rules"},"decidedAt":"2026-11-21T09:15:00Z"},"history":[{"type":"submitted","at":"2026-11-21T09:15:00Z"},{"type":"approved_automatically","at":"2026-11-21T09:15:00Z"}]}"""
 
 
 {-| contract/examples/claim.approved-by-officer.json
 -}
 claimApprovedByOfficer : String
 claimApprovedByOfficer =
-    """{"id":"3f9d2b7a-1c4e-4f8b-a6d5-2e7c9b1f4d30","version":3,"submittedAt":"2026-11-21T10:00:00Z","departure":{"id":"2026-11-20-FB14","date":"2026-11-20","trainNumber":"FB14","origin":"Storhavn","destination":"Fjordvik","scheduledDeparture":"12:12","outcome":{"type":"ran","delayMinutes":130}},"ticket":{"type":"period","price":84900,"validityDays":30},"expenses":{"amount":62000,"kind":"taxi"},"status":{"type":"approved","calculation":{"ruleSetVersion":"v1","ticketValue":{"type":"per_day","price":84900,"days":30,"value":2830},"outcome":{"type":"ran","delayMinutes":130},"percent":100,"ticketCompensation":2830,"expenses":{"type":"covered","claimed":62000,"approved":50000},"total":52830},"by":{"type":"officer","officer":"KN","note":"Kvitteringen viser 500 kr."},"decidedAt":"2026-11-21T12:30:00Z"},"history":[{"type":"submitted","at":"2026-11-21T10:00:00Z"},{"type":"sent_to_review","reasons":["expenses_claimed"],"at":"2026-11-21T10:00:00Z"},{"type":"approved_by_officer","officer":"KN","approvedExpenses":50000,"note":"Kvitteringen viser 500 kr.","at":"2026-11-21T12:30:00Z"}]}"""
+    """{"id":"3f9d2b7a-1c4e-4f8b-a6d5-2e7c9b1f4d30","version":3,"submittedAt":"2026-11-21T10:00:00Z","departure":{"id":"2026-11-20-TB14","date":"2026-11-20","trainNumber":"TB14","origin":"Storhavn","destination":"Fjordvik","scheduledDeparture":"12:12","outcome":{"type":"ran","delayMinutes":130}},"ticket":{"type":"period","price":84900,"validityDays":30},"expenses":{"amount":62000,"kind":"taxi"},"status":{"type":"approved","calculation":{"ruleSetVersion":"v1","ticketValue":{"type":"per_day","price":84900,"days":30,"value":2830},"outcome":{"type":"ran","delayMinutes":130},"percent":100,"ticketCompensation":2830,"expenses":{"type":"covered","claimed":62000,"approved":50000},"total":52830},"by":{"type":"officer","officer":"KN","note":"Kvitteringen viser 500 kr."},"decidedAt":"2026-11-21T12:30:00Z"},"history":[{"type":"submitted","at":"2026-11-21T10:00:00Z"},{"type":"sent_to_review","reasons":["expenses_claimed"],"at":"2026-11-21T10:00:00Z"},{"type":"approved_by_officer","officer":"KN","approvedExpenses":50000,"note":"Kvitteringen viser 500 kr.","at":"2026-11-21T12:30:00Z"}]}"""
 
 
 {-| contract/examples/claim.awaiting-review.json
 -}
 claimAwaitingReview : String
 claimAwaitingReview =
-    """{"id":"3f9d2b7a-1c4e-4f8b-a6d5-2e7c9b1f4d30","version":2,"submittedAt":"2026-11-21T10:00:00Z","departure":{"id":"2026-11-20-FB14","date":"2026-11-20","trainNumber":"FB14","origin":"Storhavn","destination":"Fjordvik","scheduledDeparture":"12:12","outcome":{"type":"ran","delayMinutes":130}},"ticket":{"type":"period","price":84900,"validityDays":30},"expenses":{"amount":62000,"kind":"taxi"},"status":{"type":"awaiting_review","calculation":{"ruleSetVersion":"v1","ticketValue":{"type":"per_day","price":84900,"days":30,"value":2830},"outcome":{"type":"ran","delayMinutes":130},"percent":100,"ticketCompensation":2830,"expenses":{"type":"pending_review","claimed":62000,"maxCoverable":62000},"total":2830},"reasons":["expenses_claimed"]},"history":[{"type":"submitted","at":"2026-11-21T10:00:00Z"},{"type":"sent_to_review","reasons":["expenses_claimed"],"at":"2026-11-21T10:00:00Z"}]}"""
+    """{"id":"3f9d2b7a-1c4e-4f8b-a6d5-2e7c9b1f4d30","version":2,"submittedAt":"2026-11-21T10:00:00Z","departure":{"id":"2026-11-20-TB14","date":"2026-11-20","trainNumber":"TB14","origin":"Storhavn","destination":"Fjordvik","scheduledDeparture":"12:12","outcome":{"type":"ran","delayMinutes":130}},"ticket":{"type":"period","price":84900,"validityDays":30},"expenses":{"amount":62000,"kind":"taxi"},"status":{"type":"awaiting_review","calculation":{"ruleSetVersion":"v1","ticketValue":{"type":"per_day","price":84900,"days":30,"value":2830},"outcome":{"type":"ran","delayMinutes":130},"percent":100,"ticketCompensation":2830,"expenses":{"type":"pending_review","claimed":62000,"maxCoverable":62000},"total":2830},"reasons":["expenses_claimed"]},"history":[{"type":"submitted","at":"2026-11-21T10:00:00Z"},{"type":"sent_to_review","reasons":["expenses_claimed"],"at":"2026-11-21T10:00:00Z"}]}"""
 
 
 {-| contract/examples/claim.paid-out.json
 -}
 claimPaidOut : String
 claimPaidOut =
-    """{"id":"0a6f3c1e-5b7d-4e2a-9c41-7d2f8b3e6a10","version":3,"submittedAt":"2026-11-21T09:15:00Z","departure":{"id":"2026-11-20-FB16","date":"2026-11-20","trainNumber":"FB16","origin":"Storhavn","destination":"Fjordvik","scheduledDeparture":"16:42","outcome":{"type":"ran","delayMinutes":61}},"ticket":{"type":"single","price":34900},"expenses":null,"status":{"type":"paid_out","calculation":{"ruleSetVersion":"v1","ticketValue":{"type":"full_price","value":34900},"outcome":{"type":"ran","delayMinutes":61},"percent":50,"ticketCompensation":17450,"expenses":{"type":"none_claimed"},"total":17450},"by":{"type":"rules"},"decidedAt":"2026-11-21T09:15:00Z","paidAt":"2026-11-22T08:00:00Z"},"history":[{"type":"submitted","at":"2026-11-21T09:15:00Z"},{"type":"approved_automatically","at":"2026-11-21T09:15:00Z"},{"type":"payout_recorded","at":"2026-11-22T08:00:00Z"}]}"""
+    """{"id":"0a6f3c1e-5b7d-4e2a-9c41-7d2f8b3e6a10","version":3,"submittedAt":"2026-11-21T09:15:00Z","departure":{"id":"2026-11-20-TB16","date":"2026-11-20","trainNumber":"TB16","origin":"Storhavn","destination":"Fjordvik","scheduledDeparture":"16:42","outcome":{"type":"ran","delayMinutes":61}},"ticket":{"type":"single","price":34900},"expenses":null,"status":{"type":"paid_out","calculation":{"ruleSetVersion":"v1","ticketValue":{"type":"full_price","value":34900},"outcome":{"type":"ran","delayMinutes":61},"percent":50,"ticketCompensation":17450,"expenses":{"type":"none_claimed"},"total":17450},"by":{"type":"rules"},"decidedAt":"2026-11-21T09:15:00Z","paidAt":"2026-11-22T08:00:00Z"},"history":[{"type":"submitted","at":"2026-11-21T09:15:00Z"},{"type":"approved_automatically","at":"2026-11-21T09:15:00Z"},{"type":"payout_recorded","at":"2026-11-22T08:00:00Z"}]}"""
 
 
 {-| contract/examples/claim.rejected-by-officer.json
 -}
 claimRejectedByOfficer : String
 claimRejectedByOfficer =
-    """{"id":"3f9d2b7a-1c4e-4f8b-a6d5-2e7c9b1f4d30","version":3,"submittedAt":"2026-11-21T10:00:00Z","departure":{"id":"2026-11-20-FB14","date":"2026-11-20","trainNumber":"FB14","origin":"Storhavn","destination":"Fjordvik","scheduledDeparture":"12:12","outcome":{"type":"ran","delayMinutes":130}},"ticket":{"type":"period","price":84900,"validityDays":30},"expenses":{"amount":62000,"kind":"taxi"},"status":{"type":"rejected","rejection":{"type":"officer","reason":"duplicate_claim","officer":"KN","note":"Samme reise er allerede erstattet."},"decidedAt":"2026-11-21T12:30:00Z"},"history":[{"type":"submitted","at":"2026-11-21T10:00:00Z"},{"type":"sent_to_review","reasons":["expenses_claimed"],"at":"2026-11-21T10:00:00Z"},{"type":"rejected_by_officer","officer":"KN","reason":"duplicate_claim","note":"Samme reise er allerede erstattet.","at":"2026-11-21T12:30:00Z"}]}"""
+    """{"id":"3f9d2b7a-1c4e-4f8b-a6d5-2e7c9b1f4d30","version":3,"submittedAt":"2026-11-21T10:00:00Z","departure":{"id":"2026-11-20-TB14","date":"2026-11-20","trainNumber":"TB14","origin":"Storhavn","destination":"Fjordvik","scheduledDeparture":"12:12","outcome":{"type":"ran","delayMinutes":130}},"ticket":{"type":"period","price":84900,"validityDays":30},"expenses":{"amount":62000,"kind":"taxi"},"status":{"type":"rejected","rejection":{"type":"officer","reason":"duplicate_claim","officer":"KN","note":"Samme reise er allerede erstattet."},"decidedAt":"2026-11-21T12:30:00Z"},"history":[{"type":"submitted","at":"2026-11-21T10:00:00Z"},{"type":"sent_to_review","reasons":["expenses_claimed"],"at":"2026-11-21T10:00:00Z"},{"type":"rejected_by_officer","officer":"KN","reason":"duplicate_claim","note":"Samme reise er allerede erstattet.","at":"2026-11-21T12:30:00Z"}]}"""
 
 
 {-| contract/examples/claim.rejected-by-rules.json
 -}
 claimRejectedByRules : String
 claimRejectedByRules =
-    """{"id":"c81e4a2d-9f6b-4d3c-8e17-5a2b6c9d0e50","version":2,"submittedAt":"2026-11-21T11:00:00Z","departure":{"id":"2026-11-20-FB17","date":"2026-11-20","trainNumber":"FB17","origin":"Fjordvik","destination":"Storhavn","scheduledDeparture":"18:12","outcome":{"type":"ran","delayMinutes":29}},"ticket":{"type":"single","price":34900},"expenses":null,"status":{"type":"rejected","rejection":{"type":"rules","reason":"delay_below_threshold"},"decidedAt":"2026-11-21T11:00:00Z"},"history":[{"type":"submitted","at":"2026-11-21T11:00:00Z"},{"type":"rejected_automatically","reason":"delay_below_threshold","at":"2026-11-21T11:00:00Z"}]}"""
+    """{"id":"c81e4a2d-9f6b-4d3c-8e17-5a2b6c9d0e50","version":2,"submittedAt":"2026-11-21T11:00:00Z","departure":{"id":"2026-11-20-TB17","date":"2026-11-20","trainNumber":"TB17","origin":"Fjordvik","destination":"Storhavn","scheduledDeparture":"18:12","outcome":{"type":"ran","delayMinutes":29}},"ticket":{"type":"single","price":34900},"expenses":null,"status":{"type":"rejected","rejection":{"type":"rules","reason":"delay_below_threshold"},"decidedAt":"2026-11-21T11:00:00Z"},"history":[{"type":"submitted","at":"2026-11-21T11:00:00Z"},{"type":"rejected_automatically","reason":"delay_below_threshold","at":"2026-11-21T11:00:00Z"}]}"""
 
 
 {-| contract/examples/claims.summaries.json
 -}
 claimsSummaries : String
 claimsSummaries =
-    """[{"id":"c81e4a2d-9f6b-4d3c-8e17-5a2b6c9d0e50","version":2,"status":"rejected","submittedAt":"2026-11-21T11:00:00Z","departureDate":"2026-11-20","trainNumber":"FB17","total":null},{"id":"3f9d2b7a-1c4e-4f8b-a6d5-2e7c9b1f4d30","version":2,"status":"awaiting_review","submittedAt":"2026-11-21T10:00:00Z","departureDate":"2026-11-20","trainNumber":"FB14","total":2830},{"id":"0a6f3c1e-5b7d-4e2a-9c41-7d2f8b3e6a10","version":2,"status":"approved","submittedAt":"2026-11-21T09:15:00Z","departureDate":"2026-11-20","trainNumber":"FB16","total":17450}]"""
+    """[{"id":"c81e4a2d-9f6b-4d3c-8e17-5a2b6c9d0e50","version":2,"status":"rejected","submittedAt":"2026-11-21T11:00:00Z","departureDate":"2026-11-20","trainNumber":"TB17","total":null},{"id":"3f9d2b7a-1c4e-4f8b-a6d5-2e7c9b1f4d30","version":2,"status":"awaiting_review","submittedAt":"2026-11-21T10:00:00Z","departureDate":"2026-11-20","trainNumber":"TB14","total":2830},{"id":"0a6f3c1e-5b7d-4e2a-9c41-7d2f8b3e6a10","version":2,"status":"approved","submittedAt":"2026-11-21T09:15:00Z","departureDate":"2026-11-20","trainNumber":"TB16","total":17450}]"""
 
 
 {-| contract/examples/decision-request.approve.json
@@ -135,7 +136,7 @@ decisionRequestReject =
 -}
 departures : String
 departures =
-    """[{"id":"2026-11-20-FB11","date":"2026-11-20","trainNumber":"FB11","origin":"Fjordvik","destination":"Storhavn","scheduledDeparture":"06:12","outcome":{"type":"ran","delayMinutes":3}},{"id":"2026-11-20-FB12","date":"2026-11-20","trainNumber":"FB12","origin":"Storhavn","destination":"Fjordvik","scheduledDeparture":"07:42","outcome":{"type":"ran","delayMinutes":0}},{"id":"2026-11-20-FB13","date":"2026-11-20","trainNumber":"FB13","origin":"Fjordvik","destination":"Storhavn","scheduledDeparture":"09:12","outcome":{"type":"ran","delayMinutes":0}},{"id":"2026-11-20-FB14","date":"2026-11-20","trainNumber":"FB14","origin":"Storhavn","destination":"Fjordvik","scheduledDeparture":"12:12","outcome":{"type":"ran","delayMinutes":130}},{"id":"2026-11-20-FB15","date":"2026-11-20","trainNumber":"FB15","origin":"Fjordvik","destination":"Storhavn","scheduledDeparture":"15:12","outcome":{"type":"ran","delayMinutes":0}},{"id":"2026-11-20-FB16","date":"2026-11-20","trainNumber":"FB16","origin":"Storhavn","destination":"Fjordvik","scheduledDeparture":"16:42","outcome":{"type":"ran","delayMinutes":61}},{"id":"2026-11-20-FB17","date":"2026-11-20","trainNumber":"FB17","origin":"Fjordvik","destination":"Storhavn","scheduledDeparture":"18:12","outcome":{"type":"ran","delayMinutes":29}},{"id":"2026-11-20-FB18","date":"2026-11-20","trainNumber":"FB18","origin":"Storhavn","destination":"Fjordvik","scheduledDeparture":"21:12","outcome":{"type":"ran","delayMinutes":0}}]"""
+    """[{"id":"2026-11-20-TB11","date":"2026-11-20","trainNumber":"TB11","origin":"Fjordvik","destination":"Storhavn","scheduledDeparture":"06:12","outcome":{"type":"ran","delayMinutes":3}},{"id":"2026-11-20-TB12","date":"2026-11-20","trainNumber":"TB12","origin":"Storhavn","destination":"Fjordvik","scheduledDeparture":"07:42","outcome":{"type":"ran","delayMinutes":0}},{"id":"2026-11-20-TB13","date":"2026-11-20","trainNumber":"TB13","origin":"Fjordvik","destination":"Storhavn","scheduledDeparture":"09:12","outcome":{"type":"ran","delayMinutes":0}},{"id":"2026-11-20-TB14","date":"2026-11-20","trainNumber":"TB14","origin":"Storhavn","destination":"Fjordvik","scheduledDeparture":"12:12","outcome":{"type":"ran","delayMinutes":130}},{"id":"2026-11-20-TB15","date":"2026-11-20","trainNumber":"TB15","origin":"Fjordvik","destination":"Storhavn","scheduledDeparture":"15:12","outcome":{"type":"ran","delayMinutes":0}},{"id":"2026-11-20-TB16","date":"2026-11-20","trainNumber":"TB16","origin":"Storhavn","destination":"Fjordvik","scheduledDeparture":"16:42","outcome":{"type":"ran","delayMinutes":61}},{"id":"2026-11-20-TB17","date":"2026-11-20","trainNumber":"TB17","origin":"Fjordvik","destination":"Storhavn","scheduledDeparture":"18:12","outcome":{"type":"ran","delayMinutes":29}},{"id":"2026-11-20-TB18","date":"2026-11-20","trainNumber":"TB18","origin":"Storhavn","destination":"Fjordvik","scheduledDeparture":"21:12","outcome":{"type":"ran","delayMinutes":0}}]"""
 
 
 {-| contract/examples/error.demo-limit-reached.json
@@ -143,6 +144,13 @@ departures =
 errorDemoLimitReached : String
 errorDemoLimitReached =
     """{"type":"demo_limit_reached"}"""
+
+
+{-| contract/examples/error.internal-error.json
+-}
+errorInternalError : String
+errorInternalError =
+    """{"type":"internal_error"}"""
 
 
 {-| contract/examples/error.invalid-transition.json

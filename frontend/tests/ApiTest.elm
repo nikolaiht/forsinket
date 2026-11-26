@@ -106,6 +106,10 @@ suite =
                 \_ ->
                     read (badStatus 429 Examples.errorDemoLimitReached)
                         |> Expect.equal (Err DemoLimitReached)
+            , test "a fault inside the service is reported as one, with nothing about its insides" <|
+                \_ ->
+                    read (badStatus 500 Examples.errorInternalError)
+                        |> Expect.equal (Err (Unexpected "The server reported an internal error."))
             , test "a request the service could not read is a fault in the app, and says so" <|
                 \_ ->
                     read (badStatus 400 Examples.errorMalformedRequest)
@@ -167,6 +171,7 @@ metadata statusCode =
             , ( 418, "I'm a teapot" )
             , ( 422, "Unprocessable Entity" )
             , ( 429, "Too Many Requests" )
+            , ( 500, "Internal Server Error" )
             , ( 502, "Bad Gateway" )
             ]
             |> Dict.get statusCode

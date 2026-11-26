@@ -34,7 +34,7 @@ view calculation =
                 ]
             )
         , p [ class "receipt__foot" ]
-            [ text ("Regnet ut etter Fjordbanens reisevilkår (" ++ calculation.ruleSetVersion ++ ").") ]
+            [ text ("Regnet ut etter Tindbanens reisevilkår (" ++ calculation.ruleSetVersion ++ ").") ]
         ]
 
 

@@ -1,8 +1,8 @@
 [
   {
-    "id": "2026-11-20-FB11",
+    "id": "2026-11-20-TB11",
     "date": "2026-11-20",
-    "trainNumber": "FB11",
+    "trainNumber": "TB11",
     "origin": "Fjordvik",
     "destination": "Storhavn",
     "scheduledDeparture": "06:12",
@@ -12,9 +12,9 @@
     }
   },
   {
-    "id": "2026-11-20-FB12",
+    "id": "2026-11-20-TB12",
     "date": "2026-11-20",
-    "trainNumber": "FB12",
+    "trainNumber": "TB12",
     "origin": "Storhavn",
     "destination": "Fjordvik",
     "scheduledDeparture": "07:42",
@@ -24,9 +24,9 @@
     }
   },
   {
-    "id": "2026-11-20-FB13",
+    "id": "2026-11-20-TB13",
     "date": "2026-11-20",
-    "trainNumber": "FB13",
+    "trainNumber": "TB13",
     "origin": "Fjordvik",
     "destination": "Storhavn",
     "scheduledDeparture": "09:12",
@@ -36,9 +36,9 @@
     }
   },
   {
-    "id": "2026-11-20-FB14",
+    "id": "2026-11-20-TB14",
     "date": "2026-11-20",
-    "trainNumber": "FB14",
+    "trainNumber": "TB14",
     "origin": "Storhavn",
     "destination": "Fjordvik",
     "scheduledDeparture": "12:12",
@@ -48,9 +48,9 @@
     }
   },
   {
-    "id": "2026-11-20-FB15",
+    "id": "2026-11-20-TB15",
     "date": "2026-11-20",
-    "trainNumber": "FB15",
+    "trainNumber": "TB15",
     "origin": "Fjordvik",
     "destination": "Storhavn",
     "scheduledDeparture": "15:12",
@@ -60,9 +60,9 @@
     }
   },
   {
-    "id": "2026-11-20-FB16",
+    "id": "2026-11-20-TB16",
     "date": "2026-11-20",
-    "trainNumber": "FB16",
+    "trainNumber": "TB16",
     "origin": "Storhavn",
     "destination": "Fjordvik",
     "scheduledDeparture": "16:42",
@@ -72,9 +72,9 @@
     }
   },
   {
-    "id": "2026-11-20-FB17",
+    "id": "2026-11-20-TB17",
     "date": "2026-11-20",
-    "trainNumber": "FB17",
+    "trainNumber": "TB17",
     "origin": "Fjordvik",
     "destination": "Storhavn",
     "scheduledDeparture": "18:12",
@@ -84,9 +84,9 @@
     }
   },
   {
-    "id": "2026-11-20-FB18",
+    "id": "2026-11-20-TB18",
     "date": "2026-11-20",
-    "trainNumber": "FB18",
+    "trainNumber": "TB18",
     "origin": "Storhavn",
     "destination": "Fjordvik",
     "scheduledDeparture": "21:12",

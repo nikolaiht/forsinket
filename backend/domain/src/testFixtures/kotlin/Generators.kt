@@ -25,9 +25,9 @@ val exampleDate: LocalDate = LocalDate.of(2026, 11, 20)
 
 fun departure(outcome: Outcome, date: LocalDate = exampleDate): Departure =
     Departure(
-        id = DepartureId("$date-FB16"),
+        id = DepartureId("$date-TB16"),
         date = date,
-        trainNumber = "FB16",
+        trainNumber = "TB16",
         origin = "Storhavn",
         destination = "Fjordvik",
         scheduledDeparture = LocalTime.of(16, 42),

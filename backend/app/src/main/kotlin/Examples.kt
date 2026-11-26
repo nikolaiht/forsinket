@@ -43,9 +43,9 @@ fun examples(rules: RuleSet): List<Example> {
 private fun example(rules: RuleSet, ticket: Ticket, expenses: Expenses?, outcome: Outcome): Example {
     val day = LocalDate.of(2026, 1, 5)
     val departure = Departure(
-        id = DepartureId("$day-FB13"),
+        id = DepartureId("$day-TB13"),
         date = day,
-        trainNumber = "FB13",
+        trainNumber = "TB13",
         origin = "Fjordvik",
         destination = "Storhavn",
         scheduledDeparture = LocalTime.of(9, 12),

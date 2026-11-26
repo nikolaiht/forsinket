@@ -61,7 +61,7 @@ class ClaimServiceTest : FunSpec({
         // Dates from long before the deadline to just after it, so that all three outcomes occur.
         val drafts = Arb.bind(
             Arb.int(0..100),
-            Arb.element("FB11", "FB12", "FB13", "FB14", "FB15", "FB16", "FB17", "FB18"),
+            Arb.element("TB11", "TB12", "TB13", "TB14", "TB15", "TB16", "TB17", "TB18"),
             Arb.long(1L..2_000_000L),
             Arb.long(1L..1_000_000L).orNull(0.5),
         ) { daysAgo, train, price, expenses ->
@@ -97,7 +97,7 @@ class ClaimServiceTest : FunSpec({
         val service = service(InMemoryClaimStore(), now = Instant.parse("2026-11-20T12:00:00Z")) // 13:00 in Oslo
 
         service.departures(LocalDate.of(2026, 11, 20)).map { it.trainNumber } shouldBe
-            listOf("FB11", "FB12", "FB13", "FB14")
+            listOf("TB11", "TB12", "TB13", "TB14")
         service.departures(LocalDate.of(2026, 11, 21)) shouldBe emptyList()
     }
 
@@ -105,7 +105,7 @@ class ClaimServiceTest : FunSpec({
         val store = InMemoryClaimStore()
         val service = service(store, id = fixtures.idA)
 
-        service.submit(ClaimDraft("2026-11-20-FB16", TicketDraft.Single(34900), null)).shouldBeRight()
+        service.submit(ClaimDraft("2026-11-20-TB16", TicketDraft.Single(34900), null)).shouldBeRight()
 
         service.list(StatusName.APPROVED).map { it.id } shouldBe listOf(fixtures.idA)
         service.list(StatusName.REJECTED) shouldBe emptyList()

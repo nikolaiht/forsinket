@@ -20,33 +20,33 @@ class SyntheticTrafficDataTest : FunSpec({
         val departures = SyntheticTrafficData.departuresOn(friday)
 
         departures.map { it.trainNumber } shouldBe
-            listOf("FB11", "FB12", "FB13", "FB14", "FB15", "FB16", "FB17", "FB18")
+            listOf("TB11", "TB12", "TB13", "TB14", "TB15", "TB16", "TB17", "TB18")
         departures.map { it.scheduledDeparture } shouldBe departures.map { it.scheduledDeparture }.sorted()
     }
 
     test("odd train numbers run from Fjordvik, even ones from Storhavn") {
         val departures = SyntheticTrafficData.departuresOn(friday)
 
-        departures.first { it.trainNumber == "FB11" }.let { (it.origin to it.destination) shouldBe ("Fjordvik" to "Storhavn") }
-        departures.first { it.trainNumber == "FB16" }.let { (it.origin to it.destination) shouldBe ("Storhavn" to "Fjordvik") }
+        departures.first { it.trainNumber == "TB11" }.let { (it.origin to it.destination) shouldBe ("Fjordvik" to "Storhavn") }
+        departures.first { it.trainNumber == "TB16" }.let { (it.origin to it.destination) shouldBe ("Storhavn" to "Fjordvik") }
     }
 
     test("the outcomes of 20 November 2026 are the ones the contract examples use") {
         val outcomes = SyntheticTrafficData.departuresOn(friday).associate { it.trainNumber to it.outcome }
 
-        outcomes["FB14"] shouldBe Outcome.Ran(130)
-        outcomes["FB16"] shouldBe Outcome.Ran(61)
-        outcomes["FB17"] shouldBe Outcome.Ran(29)
+        outcomes["TB14"] shouldBe Outcome.Ran(130)
+        outcomes["TB16"] shouldBe Outcome.Ran(61)
+        outcomes["TB17"] shouldBe Outcome.Ran(29)
     }
 
     test("the day after has a cancelled departure") {
         val saturday = SyntheticTrafficData.departuresOn(friday.plusDays(1))
 
-        saturday.first { it.trainNumber == "FB15" }.outcome shouldBe Outcome.Cancelled
+        saturday.first { it.trainNumber == "TB15" }.outcome shouldBe Outcome.Cancelled
     }
 
     test("a departure is found by its id") {
-        val found = SyntheticTrafficData.find(DepartureId("2026-11-20-FB16"))
+        val found = SyntheticTrafficData.find(DepartureId("2026-11-20-TB16"))
 
         found?.date shouldBe friday
         found?.scheduledDeparture shouldBe LocalTime.of(16, 42)
@@ -54,7 +54,7 @@ class SyntheticTrafficDataTest : FunSpec({
     }
 
     test("an id that is not a departure is not found") {
-        listOf("garbage", "", "2026-11-20", "2026-11-20-XX99", "2026-13-45-FB11", "2026-11-20-FB16-extra").forEach { id ->
+        listOf("garbage", "", "2026-11-20", "2026-11-20-XX99", "2026-13-45-TB11", "2026-11-20-TB16-extra").forEach { id ->
             SyntheticTrafficData.find(DepartureId(id)) shouldBe null
         }
     }

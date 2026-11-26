@@ -94,7 +94,7 @@ class ContractTest : FunSpec({
         test("a claim for a single ticket") {
             val draft = claimRequest("claim-request.single.json")
 
-            draft shouldBe ClaimDraft("2026-11-20-FB16", TicketDraft.Single(34900), expenses = null)
+            draft shouldBe ClaimDraft("2026-11-20-TB16", TicketDraft.Single(34900), expenses = null)
             validateClaim(RulesV1, draft, fixtures.claimA.departure, submittedOn.atStartOfDay()) shouldBe fixtures.claimA.right()
         }
 
@@ -102,15 +102,15 @@ class ContractTest : FunSpec({
             val draft = claimRequest("claim-request.period-with-expenses.json")
 
             draft shouldBe
-                ClaimDraft("2026-11-20-FB14", TicketDraft.Period(84900, 30), ExpensesDraft(62000, "taxi"))
+                ClaimDraft("2026-11-20-TB14", TicketDraft.Period(84900, 30), ExpensesDraft(62000, "taxi"))
             validateClaim(RulesV1, draft, fixtures.claimB.departure, submittedOn.atStartOfDay()) shouldBe fixtures.claimB.right()
         }
 
         test("a claim without the expenses field means no expenses") {
-            val body = """{"departureId":"2026-11-20-FB16","ticket":{"type":"single","price":34900}}"""
+            val body = """{"departureId":"2026-11-20-TB16","ticket":{"type":"single","price":34900}}"""
 
             AppJson.decodeFromString<ClaimRequestDto>(body).toDraft() shouldBe
-                ClaimDraft("2026-11-20-FB16", TicketDraft.Single(34900), expenses = null)
+                ClaimDraft("2026-11-20-TB16", TicketDraft.Single(34900), expenses = null)
         }
 
         test("an officer's approval") {

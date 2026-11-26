@@ -2,7 +2,7 @@
 #
 #   docker compose up --build
 #
-# The app is then on http://localhost:8080, with a few demo claims in it.
+# The app is then on http://localhost:8080, with six demo claims in it.
 
 services:
   db:

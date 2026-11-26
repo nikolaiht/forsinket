@@ -165,7 +165,7 @@ class HttpApiTest : FunSpec({
         test("a delay under the threshold is rejected by the rules, and still recorded") {
             withApi(listOf(fixtures.idC)) {
                 clock.now = fixtures.submittedC
-                val body = """{"departureId":"2026-11-20-FB17","ticket":{"type":"single","price":34900},"expenses":null}"""
+                val body = """{"departureId":"2026-11-20-TB17","ticket":{"type":"single","price":34900},"expenses":null}"""
 
                 val submitted = post("/api/claims", body)
 
@@ -194,7 +194,7 @@ class HttpApiTest : FunSpec({
                     contractExample("assessment.manual-review.json")
                 post(
                     "/api/assessments",
-                    """{"departureId":"2026-11-20-FB17","ticket":{"type":"single","price":34900}}""",
+                    """{"departureId":"2026-11-20-TB17","ticket":{"type":"single","price":34900}}""",
                 ).json() shouldBe contractExample("assessment.not-eligible.json")
 
                 store.count() shouldBe 0
@@ -236,15 +236,15 @@ class HttpApiTest : FunSpec({
             withApi {
                 listOf(
                     "this is not json",
-                    """{"departureId":"2026-11-20-FB16"}""",
-                    """{"departureId":"2026-11-20-FB16","ticket":{"type":"single","price":"abc"}}""",
-                    """{"departureId":"2026-11-20-FB16","ticket":{"type":"single","price":true}}""",
-                    """{"departureId":"2026-11-20-FB16","ticket":{"type":"single","price":null}}""",
-                    """{"departureId":"2026-11-20-FB16","ticket":{"type":"single","price":[34900]}}""",
+                    """{"departureId":"2026-11-20-TB16"}""",
+                    """{"departureId":"2026-11-20-TB16","ticket":{"type":"single","price":"abc"}}""",
+                    """{"departureId":"2026-11-20-TB16","ticket":{"type":"single","price":true}}""",
+                    """{"departureId":"2026-11-20-TB16","ticket":{"type":"single","price":null}}""",
+                    """{"departureId":"2026-11-20-TB16","ticket":{"type":"single","price":[34900]}}""",
                     """{"departureId":20261120,"ticket":{"type":"single","price":34900},"expenses":"none"}""",
-                    """{"departureId":"2026-11-20-FB16","ticket":{"type":"weekly","price":34900}}""",
-                    """{"departureId":"2026-11-20-FB16","ticket":{"type":"single","price":34900},"extra":true}""",
-                    """{"departureId":"2026-11-20-FB16","ticket":{"type":"single","price":349.5}}""",
+                    """{"departureId":"2026-11-20-TB16","ticket":{"type":"weekly","price":34900}}""",
+                    """{"departureId":"2026-11-20-TB16","ticket":{"type":"single","price":34900},"extra":true}""",
+                    """{"departureId":"2026-11-20-TB16","ticket":{"type":"single","price":349.5}}""",
                 ).forEach { body ->
                     withClue(body) {
                         val response = post("/api/claims", body)
@@ -298,7 +298,7 @@ class HttpApiTest : FunSpec({
             // kotlinx.serialization does this even in its strict mode. It is
             // harmless, so it is pinned here instead of worked around.
             withApi {
-                val body = """{"departureId":"2026-11-20-FB16","ticket":{"type":"single","price":"34900"}}"""
+                val body = """{"departureId":"2026-11-20-TB16","ticket":{"type":"single","price":"34900"}}"""
 
                 val response = post("/api/claims", body)
 
@@ -413,7 +413,7 @@ class HttpApiTest : FunSpec({
                 clock.now = fixtures.submittedB
                 postExample("/api/claims", "claim-request.period-with-expenses.json")
                 clock.now = fixtures.submittedC
-                post("/api/claims", """{"departureId":"2026-11-20-FB17","ticket":{"type":"single","price":34900}}""")
+                post("/api/claims", """{"departureId":"2026-11-20-TB17","ticket":{"type":"single","price":34900}}""")
 
                 get("/api/claims").json() shouldBe contractExample("claims.summaries.json")
                 get("/api/claims?status=awaiting_review").json().jsonArray.map { it.field("id").jsonPrimitive.content } shouldBe
@@ -459,13 +459,13 @@ class HttpApiTest : FunSpec({
                 clock.now = Instant.parse("2026-11-20T12:00:00Z") // 13:00 in Oslo
 
                 get("/api/departures?date=2026-11-20").json().jsonArray.map { it.field("trainNumber").jsonPrimitive.content } shouldBe
-                    listOf("FB11", "FB12", "FB13", "FB14")
+                    listOf("TB11", "TB12", "TB13", "TB14")
             }
         }
 
         test("a claim for a train that has not left yet is turned down") {
             withApi {
-                clock.now = Instant.parse("2026-11-20T12:00:00Z") // 13:00 in Oslo, FB16 leaves at 16:42
+                clock.now = Instant.parse("2026-11-20T12:00:00Z") // 13:00 in Oslo, TB16 leaves at 16:42
 
                 val response = postExample("/api/claims", "claim-request.single.json")
 

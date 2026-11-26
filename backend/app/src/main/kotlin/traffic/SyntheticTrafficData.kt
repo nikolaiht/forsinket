@@ -7,7 +7,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 
 /**
- * Made-up traffic for a made-up railway: Fjordbanen, between Fjordvik and
+ * Made-up traffic for a made-up railway: Tindbanen, between Fjordvik and
  * Storhavn. The departures are a pure function of the date, so the demo has
  * fresh traffic on whatever day it runs, and a test can name a date and know
  * what happened on it.
@@ -19,14 +19,14 @@ object SyntheticTrafficData : TrafficData {
     private const val STORHAVN = "Storhavn"
 
     private val timetable = listOf(
-        Service("FB11", LocalTime.of(6, 12), FJORDVIK, STORHAVN),
-        Service("FB12", LocalTime.of(7, 42), STORHAVN, FJORDVIK),
-        Service("FB13", LocalTime.of(9, 12), FJORDVIK, STORHAVN),
-        Service("FB14", LocalTime.of(12, 12), STORHAVN, FJORDVIK),
-        Service("FB15", LocalTime.of(15, 12), FJORDVIK, STORHAVN),
-        Service("FB16", LocalTime.of(16, 42), STORHAVN, FJORDVIK),
-        Service("FB17", LocalTime.of(18, 12), FJORDVIK, STORHAVN),
-        Service("FB18", LocalTime.of(21, 12), STORHAVN, FJORDVIK),
+        Service("TB11", LocalTime.of(6, 12), FJORDVIK, STORHAVN),
+        Service("TB12", LocalTime.of(7, 42), STORHAVN, FJORDVIK),
+        Service("TB13", LocalTime.of(9, 12), FJORDVIK, STORHAVN),
+        Service("TB14", LocalTime.of(12, 12), STORHAVN, FJORDVIK),
+        Service("TB15", LocalTime.of(15, 12), FJORDVIK, STORHAVN),
+        Service("TB16", LocalTime.of(16, 42), STORHAVN, FJORDVIK),
+        Service("TB17", LocalTime.of(18, 12), FJORDVIK, STORHAVN),
+        Service("TB18", LocalTime.of(21, 12), STORHAVN, FJORDVIK),
     )
 
     private val cancelled: Int? = null

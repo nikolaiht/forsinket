@@ -29,13 +29,13 @@ mainId =
 
 document : Section -> { title : String, body : List (Html msg) } -> Browser.Document msg
 document section page =
-    { title = page.title ++ " – Fjordbanen reisegaranti"
+    { title = page.title ++ " – Tindbanen reisegaranti"
     , body =
         [ a [ class "skip-link", href ("#" ++ mainId) ] [ text "Hopp til innholdet" ]
         , header [ class "site-header" ]
             [ div [ class "site-header__inner" ]
                 [ a [ class "wordmark", Route.href Route.Home ]
-                    [ span [ class "wordmark__name" ] [ text "Fjordbanen" ]
+                    [ span [ class "wordmark__name" ] [ text "Tindbanen" ]
                     , span [ class "wordmark__service" ] [ text "Reisegaranti" ]
                     ]
                 , nav [ attribute "aria-label" "Hovedmeny" ]
@@ -47,7 +47,7 @@ document section page =
         , main_ [ id mainId, tabindex -1, class "page" ] page.body
         , footer [ class "site-footer" ]
             [ p []
-                [ text "Dette er en demo. Fjordbanen finnes ikke, reglene er laget for demoen, og alle data er syntetiske. På den åpne demoen nullstilles dataene jevnlig." ]
+                [ text "Dette er en demo. Tindbanen finnes ikke, reglene er laget for demoen, og alle data er syntetiske. På den åpne demoen nullstilles dataene jevnlig." ]
             ]
         ]
     }

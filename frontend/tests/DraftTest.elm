@@ -19,7 +19,7 @@ suite =
                 validate complete
                     |> Expect.equal
                         (Ok
-                            { departureId = Fixtures.fb16.id
+                            { departureId = Fixtures.tb16.id
                             , ticket = Fixtures.single349
                             , expenses = Nothing
                             }
@@ -28,14 +28,14 @@ suite =
             \_ ->
                 validate
                     { complete
-                        | departure = Just Fixtures.fb14.id
+                        | departure = Just Fixtures.tb14.id
                         , ticketKind = PeriodKind ThirtyDays
                         , price = "849"
                         , expenses = WithExpenses { amount = "620,00", kind = Expenses.Taxi }
                     }
                     |> Expect.equal
                         (Ok
-                            { departureId = Fixtures.fb14.id
+                            { departureId = Fixtures.tb14.id
                             , ticket = Fixtures.period849
                             , expenses = Just Fixtures.taxi620
                             }
@@ -104,11 +104,11 @@ validate =
     Draft.validate Fixtures.rules
 
 
-{-| The form for example A: FB16 on a single ticket of 349 kr, no expenses.
+{-| The form for example A: TB16 on a single ticket of 349 kr, no expenses.
 -}
 complete : Draft
 complete =
-    { departure = Just Fixtures.fb16.id
+    { departure = Just Fixtures.tb16.id
     , ticketKind = SingleKind
     , price = "349"
     , expenses = NoExpenses
@@ -157,7 +157,7 @@ draftFor claim =
 newClaim : Fuzzer NewClaim
 newClaim =
     Fuzz.map3 NewClaim
-        (Fuzz.oneOfValues [ Fixtures.fb14.id, Fixtures.fb16.id, Fixtures.fb17.id ])
+        (Fuzz.oneOfValues [ Fixtures.tb14.id, Fixtures.tb16.id, Fixtures.tb17.id ])
         anyTicket
         (Fuzz.maybe anyExpenses)
 

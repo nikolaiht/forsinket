@@ -38,7 +38,7 @@ private sealed interface Action {
     data object Payout : Action
 }
 
-private val trainNumbers = listOf("FB11", "FB12", "FB13", "FB14", "FB15", "FB16", "FB17", "FB18")
+private val trainNumbers = listOf("TB11", "TB12", "TB13", "TB14", "TB15", "TB16", "TB17", "TB18")
 
 /** A claim for some departure in the week before 21 November 2026. Always valid. */
 private val claimDrafts: Arb<ClaimDraft> =

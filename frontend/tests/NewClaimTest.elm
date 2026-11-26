@@ -69,7 +69,7 @@ suite =
             , test "the chosen departure is dropped when the date changes" <|
                 \_ ->
                     withDepartures
-                        |> step (DepartureChosen Fixtures.fb16.id)
+                        |> step (DepartureChosen Fixtures.tb16.id)
                         |> step (DateChanged "2026-11-21")
                         |> .draft
                         |> .departure
@@ -92,7 +92,7 @@ suite =
             [ test "is asked for as soon as the form is complete" <|
                 \_ ->
                     withDepartures
-                        |> step (DepartureChosen Fixtures.fb16.id)
+                        |> step (DepartureChosen Fixtures.tb16.id)
                         |> NewClaim.update (PriceChanged "349")
                         |> Tuple.mapFirst .preview
                         |> Expect.equal ( PreviewFor claimA Loading, [ AskForPreview claimA ] )
@@ -279,7 +279,7 @@ saturday =
 
 claimA : NewClaim
 claimA =
-    { departureId = Fixtures.fb16.id
+    { departureId = Fixtures.tb16.id
     , ticket = Fixtures.single349
     , expenses = Nothing
     }
@@ -329,5 +329,5 @@ withDepartures =
 complete : NewClaim.Model
 complete =
     withDepartures
-        |> step (DepartureChosen Fixtures.fb16.id)
+        |> step (DepartureChosen Fixtures.tb16.id)
         |> step (PriceChanged "349")

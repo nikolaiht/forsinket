@@ -50,7 +50,7 @@ data class RuleSet(
         }
 }
 
-/** Fjordbanen's terms, version 1. Fictional, made for this demo. */
+/** Tindbanen's terms, version 1. Fictional, made for this demo. */
 val RulesV1 = RuleSet(
     version = "v1",
     claimDeadlineDays = 90,

@@ -63,7 +63,7 @@ suite =
                   , status = Status.Rejected
                   , submittedAt = Fixtures.time "2026-11-21T11:00:00Z"
                   , departureDate = Date.fromCalendarDate 2026 Nov 20
-                  , trainNumber = "FB17"
+                  , trainNumber = "TB17"
                   , total = Nothing
                   }
                 , { id = Fixtures.idB
@@ -71,7 +71,7 @@ suite =
                   , status = Status.AwaitingReview
                   , submittedAt = Fixtures.time "2026-11-21T10:00:00Z"
                   , departureDate = Date.fromCalendarDate 2026 Nov 20
-                  , trainNumber = "FB14"
+                  , trainNumber = "TB14"
                   , total = Just (Fixtures.ore 2830)
                   }
                 , { id = Fixtures.idA
@@ -79,7 +79,7 @@ suite =
                   , status = Status.Approved
                   , submittedAt = Fixtures.time "2026-11-21T09:15:00Z"
                   , departureDate = Date.fromCalendarDate 2026 Nov 20
-                  , trainNumber = "FB16"
+                  , trainNumber = "TB16"
                   , total = Just (Fixtures.ore 17450)
                   }
                 ]
@@ -120,10 +120,10 @@ suite =
             ]
         , describe "requests"
             [ encodes "a claim for a single ticket"
-                (Draft.encode { departureId = Fixtures.fb16.id, ticket = Fixtures.single349, expenses = Nothing })
+                (Draft.encode { departureId = Fixtures.tb16.id, ticket = Fixtures.single349, expenses = Nothing })
                 Examples.claimRequestSingle
             , encodes "a claim for a period ticket with expenses"
-                (Draft.encode { departureId = Fixtures.fb14.id, ticket = Fixtures.period849, expenses = Just Fixtures.taxi620 })
+                (Draft.encode { departureId = Fixtures.tb14.id, ticket = Fixtures.period849, expenses = Just Fixtures.taxi620 })
                 Examples.claimRequestPeriodWithExpenses
             , encodes "an officer's approval"
                 (Decision.encode 2
@@ -158,7 +158,7 @@ suite =
                 (String.replace "\"version\":2," "" Examples.claimAwaitingReview)
             , refuses "a date that is not a date"
                 (Decode.list Departure.decoder)
-                (String.replace "2026-11-20\",\"trainNumber\":\"FB11" "20.11.2026\",\"trainNumber\":\"FB11" Examples.departures)
+                (String.replace "2026-11-20\",\"trainNumber\":\"TB11" "20.11.2026\",\"trainNumber\":\"TB11" Examples.departures)
             ]
         , test "a timestamp is read as the right instant" <|
             \_ ->

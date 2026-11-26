@@ -53,13 +53,13 @@ object ContractFixtures {
     val decidedAt: Instant = Instant.parse("2026-11-21T12:30:00Z")
     val paidAt: Instant = Instant.parse("2026-11-22T08:00:00Z")
 
-    val claimA = ClaimDetails(departure("2026-11-20-FB16"), Ticket.Single(Money.ofKroner(349)), expenses = null)
+    val claimA = ClaimDetails(departure("2026-11-20-TB16"), Ticket.Single(Money.ofKroner(349)), expenses = null)
     val claimB = ClaimDetails(
-        departure("2026-11-20-FB14"),
+        departure("2026-11-20-TB14"),
         Ticket.Period(Money.ofKroner(849), Validity.THIRTY_DAYS),
         Expenses(Money.ofKroner(620), ExpenseKind.TAXI),
     )
-    val claimC = ClaimDetails(departure("2026-11-20-FB17"), Ticket.Single(Money.ofKroner(349)), expenses = null)
+    val claimC = ClaimDetails(departure("2026-11-20-TB17"), Ticket.Single(Money.ofKroner(349)), expenses = null)
 
     const val RECEIPT_NOTE = "Kvitteringen viser 500 kr."
     const val DUPLICATE_NOTE = "Samme reise er allerede erstattet."

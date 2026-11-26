@@ -3,9 +3,9 @@
   "version": 3,
   "submittedAt": "2026-11-21T09:15:00Z",
   "departure": {
-    "id": "2026-11-20-FB16",
+    "id": "2026-11-20-TB16",
     "date": "2026-11-20",
-    "trainNumber": "FB16",
+    "trainNumber": "TB16",
     "origin": "Storhavn",
     "destination": "Fjordvik",
     "scheduledDeparture": "16:42",

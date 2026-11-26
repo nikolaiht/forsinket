@@ -1,7 +1,7 @@
 module Fixtures exposing
     ( approvedAutomatically, approvedByOfficer, awaitingReview, paidOut, rejectedByOfficer, rejectedByRules
     , calculationA, calculationB
-    , departures, fb14, fb16, fb17
+    , departures, tb14, tb16, tb17
     , idA, idB, idC
     , period849, single349, taxi620, ore
     , rules
@@ -14,7 +14,7 @@ descriptions of the same thing: the JSON file and this module.
 
 @docs approvedAutomatically, approvedByOfficer, awaitingReview, paidOut, rejectedByOfficer, rejectedByRules
 @docs calculationA, calculationB
-@docs departures, fb14, fb16, fb17
+@docs departures, tb14, tb16, tb17
 @docs idA, idB, idC
 @docs period849, single349, taxi620, ore
 @docs rules
@@ -61,30 +61,30 @@ departure trainNumber origin destination scheduledDeparture outcome =
 
 departures : List Departure
 departures =
-    [ departure "FB11" "Fjordvik" "Storhavn" "06:12" (Ran 3)
-    , departure "FB12" "Storhavn" "Fjordvik" "07:42" (Ran 0)
-    , departure "FB13" "Fjordvik" "Storhavn" "09:12" (Ran 0)
-    , fb14
-    , departure "FB15" "Fjordvik" "Storhavn" "15:12" (Ran 0)
-    , fb16
-    , fb17
-    , departure "FB18" "Storhavn" "Fjordvik" "21:12" (Ran 0)
+    [ departure "TB11" "Fjordvik" "Storhavn" "06:12" (Ran 3)
+    , departure "TB12" "Storhavn" "Fjordvik" "07:42" (Ran 0)
+    , departure "TB13" "Fjordvik" "Storhavn" "09:12" (Ran 0)
+    , tb14
+    , departure "TB15" "Fjordvik" "Storhavn" "15:12" (Ran 0)
+    , tb16
+    , tb17
+    , departure "TB18" "Storhavn" "Fjordvik" "21:12" (Ran 0)
     ]
 
 
-fb14 : Departure
-fb14 =
-    departure "FB14" "Storhavn" "Fjordvik" "12:12" (Ran 130)
+tb14 : Departure
+tb14 =
+    departure "TB14" "Storhavn" "Fjordvik" "12:12" (Ran 130)
 
 
-fb16 : Departure
-fb16 =
-    departure "FB16" "Storhavn" "Fjordvik" "16:42" (Ran 61)
+tb16 : Departure
+tb16 =
+    departure "TB16" "Storhavn" "Fjordvik" "16:42" (Ran 61)
 
 
-fb17 : Departure
-fb17 =
-    departure "FB17" "Fjordvik" "Storhavn" "18:12" (Ran 29)
+tb17 : Departure
+tb17 =
+    departure "TB17" "Fjordvik" "Storhavn" "18:12" (Ran 29)
 
 
 
@@ -193,7 +193,7 @@ claimA =
     { id = idA
     , version = 2
     , submittedAt = submittedA
-    , departure = fb16
+    , departure = tb16
     , ticket = single349
     , expenses = Nothing
     , status = Approved { calculation = calculationA, by = ByRules, decidedAt = submittedA }
@@ -209,7 +209,7 @@ claimB =
     { id = idB
     , version = 2
     , submittedAt = submittedB
-    , departure = fb14
+    , departure = tb14
     , ticket = period849
     , expenses = Just taxi620
     , status = AwaitingReview { calculation = calculationB, reasons = ( ExpensesClaimed, [] ) }
@@ -296,7 +296,7 @@ rejectedByRules =
     { id = idC
     , version = 2
     , submittedAt = submittedC
-    , departure = fb17
+    , departure = tb17
     , ticket = single349
     , expenses = Nothing
     , status = Rejected { rejection = RejectedByRules DelayBelowThreshold, decidedAt = submittedC }
