@@ -1,4 +1,4 @@
-module Remote exposing (Remote(..), fromResult)
+module Remote exposing (Remote(..), fromResult, map)
 
 {-| Something the app has asked the service for.
 
@@ -26,3 +26,16 @@ fromResult result =
 
         Err error ->
             Failed error
+
+
+map : (a -> b) -> Remote error a -> Remote error b
+map change remote =
+    case remote of
+        Loading ->
+            Loading
+
+        Failed error ->
+            Failed error
+
+        Loaded value ->
+            Loaded (change value)

@@ -2,9 +2,14 @@ module Main exposing (main)
 
 {-| The program. It knows which page is showing and passes each message on to
 that page. Everything a page does lives in that page's module.
+
+A page's `update` returns the effects it wants as values. This module is where
+they are carried out, with each page's own `perform`.
+
 -}
 
 import Browser
+import Browser.Dom as Dom
 import Browser.Navigation as Nav
 import Html exposing (Html, a, h1, p, text)
 import Html.Attributes exposing (class)
@@ -15,7 +20,6 @@ import Page.ReviewClaim as ReviewClaim
 import Page.ReviewQueue as ReviewQueue
 import Route exposing (Route)
 import Task
-import Time
 import Url exposing (Url)
 import View.Layout as Layout
 
@@ -38,7 +42,7 @@ main =
 
 type alias Model =
     { key : Nav.Key
-    , zone : Time.Zone
+    , url : Url
     , page : Page
     }
 
@@ -59,37 +63,43 @@ init : () -> Url -> Nav.Key -> ( Model, Cmd Msg )
 init _ url key =
     let
         ( page, cmd ) =
-            open (Route.fromUrl url)
+            open key (Route.fromUrl url)
     in
-    -- Times are shown in UTC for the instant it takes the browser to say
-    -- which time zone it is in.
-    ( { key = key, zone = Time.utc, page = page }
-    , Cmd.batch [ cmd, Task.perform GotZone Time.here ]
-    )
+    ( { key = key, url = url, page = page }, cmd )
 
 
 {-| The page an address leads to, freshly started.
 -}
-open : Maybe Route -> ( Page, Cmd Msg )
-open route =
+open : Nav.Key -> Maybe Route -> ( Page, Cmd Msg )
+open key route =
     case route of
         Nothing ->
             ( NotFound, Cmd.none )
 
         Just Route.Home ->
-            Home.init |> Tuple.mapBoth Home (Cmd.map HomeMsg)
+            Home.init |> started Home HomeMsg Home.perform
 
         Just Route.NewClaim ->
-            NewClaim.init |> Tuple.mapBoth NewClaim (Cmd.map NewClaimMsg)
+            NewClaim.init |> started NewClaim NewClaimMsg (NewClaim.perform key)
 
         Just (Route.Claim id) ->
-            ClaimPage.init id |> Tuple.mapBoth Claim (Cmd.map ClaimMsg)
+            ClaimPage.init id |> started Claim ClaimMsg ClaimPage.perform
 
         Just (Route.ReviewQueue filter) ->
-            ReviewQueue.init filter |> Tuple.mapBoth ReviewQueue (Cmd.map ReviewQueueMsg)
+            ReviewQueue.init filter |> started ReviewQueue ReviewQueueMsg ReviewQueue.perform
 
         Just (Route.ReviewClaim id) ->
-            ReviewClaim.init id |> Tuple.mapBoth ReviewClaim (Cmd.map ReviewClaimMsg)
+            ReviewClaim.init id |> started ReviewClaim ReviewClaimMsg ReviewClaim.perform
+
+
+started : (pageModel -> Page) -> (pageMsg -> Msg) -> (effect -> Cmd pageMsg) -> ( pageModel, List effect ) -> ( Page, Cmd Msg )
+started toPage toMsg perform ( pageModel, effects ) =
+    ( toPage pageModel, performAll toMsg perform effects )
+
+
+performAll : (pageMsg -> Msg) -> (effect -> Cmd pageMsg) -> List effect -> Cmd Msg
+performAll toMsg perform effects =
+    Cmd.map toMsg (Cmd.batch (List.map perform effects))
 
 
 
@@ -99,19 +109,26 @@ open route =
 type Msg
     = LinkClicked Browser.UrlRequest
     | UrlChanged Url
-    | GotZone Time.Zone
     | HomeMsg Home.Msg
     | NewClaimMsg NewClaim.Msg
     | ClaimMsg ClaimPage.Msg
     | ReviewQueueMsg ReviewQueue.Msg
     | ReviewClaimMsg ReviewClaim.Msg
+    | NoOp
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case ( msg, model.page ) of
         ( LinkClicked (Browser.Internal url), _ ) ->
-            ( model, Nav.pushUrl model.key (Url.toString url) )
+            if url.path == model.url.path && url.query == model.url.query then
+                -- A link to a place on the page that is already showing, such
+                -- as "skip to the content". Going there through the address
+                -- bar would start the page again and empty a half-filled form.
+                ( model, url.fragment |> Maybe.map focus |> Maybe.withDefault Cmd.none )
+
+            else
+                ( model, Nav.pushUrl model.key (Url.toString url) )
 
         ( LinkClicked (Browser.External href), _ ) ->
             ( model, Nav.load href )
@@ -119,42 +136,47 @@ update msg model =
         ( UrlChanged url, _ ) ->
             let
                 ( page, cmd ) =
-                    open (Route.fromUrl url)
+                    open model.key (Route.fromUrl url)
             in
-            ( { model | page = page }, cmd )
-
-        ( GotZone zone, _ ) ->
-            ( { model | zone = zone }, Cmd.none )
+            -- A new page: put focus at the top of its content, where a screen
+            -- reader starts reading and the next Tab continues from.
+            ( { model | url = url, page = page }, Cmd.batch [ cmd, focus Layout.mainId ] )
 
         ( HomeMsg pageMsg, Home pageModel ) ->
             Home.update pageMsg pageModel
-                |> showing Home HomeMsg model
+                |> showing Home HomeMsg Home.perform model
 
         ( NewClaimMsg pageMsg, NewClaim pageModel ) ->
-            NewClaim.update (\route -> Nav.pushUrl model.key (Route.toString route)) pageMsg pageModel
-                |> showing NewClaim NewClaimMsg model
+            NewClaim.update pageMsg pageModel
+                |> showing NewClaim NewClaimMsg (NewClaim.perform model.key) model
 
         ( ClaimMsg pageMsg, Claim pageModel ) ->
             ClaimPage.update pageMsg pageModel
-                |> showing Claim ClaimMsg model
+                |> showing Claim ClaimMsg ClaimPage.perform model
 
         ( ReviewQueueMsg pageMsg, ReviewQueue pageModel ) ->
             ReviewQueue.update pageMsg pageModel
-                |> showing ReviewQueue ReviewQueueMsg model
+                |> showing ReviewQueue ReviewQueueMsg ReviewQueue.perform model
 
         ( ReviewClaimMsg pageMsg, ReviewClaim pageModel ) ->
             ReviewClaim.update pageMsg pageModel
-                |> showing ReviewClaim ReviewClaimMsg model
+                |> showing ReviewClaim ReviewClaimMsg ReviewClaim.perform model
 
         _ ->
-            -- An answer for a page that is no longer showing. The page it was
-            -- for is gone, so there is nothing to do with it.
+            -- A message for a kind of page that is no longer showing. A message
+            -- for the same kind of page, but about something that page has
+            -- moved on from, is recognised and dropped by the page itself.
             ( model, Cmd.none )
 
 
-showing : (pageModel -> Page) -> (pageMsg -> Msg) -> Model -> ( pageModel, Cmd pageMsg ) -> ( Model, Cmd Msg )
-showing toPage toMsg model ( pageModel, cmd ) =
-    ( { model | page = toPage pageModel }, Cmd.map toMsg cmd )
+showing : (pageModel -> Page) -> (pageMsg -> Msg) -> (effect -> Cmd pageMsg) -> Model -> ( pageModel, List effect ) -> ( Model, Cmd Msg )
+showing toPage toMsg perform model ( pageModel, effects ) =
+    ( { model | page = toPage pageModel }, performAll toMsg perform effects )
+
+
+focus : String -> Cmd Msg
+focus elementId =
+    Task.attempt (\_ -> NoOp) (Dom.focus elementId)
 
 
 
@@ -165,22 +187,22 @@ view : Model -> Browser.Document Msg
 view model =
     case model.page of
         Home pageModel ->
-            Layout.document Layout.Front (mapped HomeMsg (Home.view pageModel))
+            Layout.document Layout.NoSection (mapped HomeMsg (Home.view pageModel))
 
         NewClaim pageModel ->
-            Layout.document Layout.Passenger (mapped NewClaimMsg (NewClaim.view pageModel))
+            Layout.document Layout.NewClaimPage (mapped NewClaimMsg (NewClaim.view pageModel))
 
         Claim pageModel ->
-            Layout.document Layout.Passenger (mapped ClaimMsg (ClaimPage.view model.zone pageModel))
+            Layout.document Layout.NoSection (mapped ClaimMsg (ClaimPage.view pageModel))
 
         ReviewQueue pageModel ->
-            Layout.document Layout.Officer (mapped ReviewQueueMsg (ReviewQueue.view model.zone pageModel))
+            Layout.document Layout.OfficerPages (mapped ReviewQueueMsg (ReviewQueue.view pageModel))
 
         ReviewClaim pageModel ->
-            Layout.document Layout.Officer (mapped ReviewClaimMsg (ReviewClaim.view model.zone pageModel))
+            Layout.document Layout.OfficerPages (mapped ReviewClaimMsg (ReviewClaim.view pageModel))
 
         NotFound ->
-            Layout.document Layout.Front
+            Layout.document Layout.NoSection
                 { title = "Fant ikke siden"
                 , body =
                     [ h1 [] [ text "Fant ikke siden" ]

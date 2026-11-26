@@ -1,8 +1,9 @@
 module NewClaimTest exposing (suite)
 
 {-| The page for a new claim, driven the way the browser drives it: one
-message at a time. No browser is needed, because `update` is a function from a
-message and a model to a model.
+message at a time. `update` returns the new model and the effects it wants
+done, as plain values, so a test can check both what the page now shows and
+what it asked for, without a browser and without a server.
 -}
 
 import Api
@@ -10,28 +11,34 @@ import Claim.Calculation exposing (Assessment(..))
 import Claim.Draft exposing (ExpensesDraft(..), NewClaim)
 import Claim.Expenses as Expenses
 import Claim.Reason exposing (IneligibilityReason(..))
-import Claim.Ticket
+import Claim.Ticket exposing (Ticket(..))
 import Date exposing (Date)
 import Expect
 import FieldError exposing (Field(..), Problem(..))
-import Fixtures
-import Money
-import Page.NewClaim as NewClaim exposing (Departures(..), Msg(..), Preview(..), Submission(..))
+import Fixtures exposing (ore)
+import Html
+import Page.NewClaim as NewClaim exposing (Departures(..), Effect(..), Msg(..), Preview(..), Submission(..))
 import Remote exposing (Remote(..))
 import Test exposing (Test, describe, test)
+import Test.Html.Query as Query
+import Test.Html.Selector as Selector
 import Time exposing (Month(..))
 
 
 suite : Test
 suite =
-    describe "Page.NewClaim.update"
-        [ describe "departures"
+    describe "Page.NewClaim"
+        [ test "opening the page asks for the rules and for today's date" <|
+            \_ ->
+                Tuple.second NewClaim.init
+                    |> Expect.equal [ FetchRules, FetchToday ]
+        , describe "departures"
             [ test "are asked for when a date is chosen" <|
                 \_ ->
                     opened
-                        |> step (DateChanged "2026-11-20")
-                        |> .departures
-                        |> Expect.equal (For friday Loading)
+                        |> NewClaim.update (DateChanged "2026-11-20")
+                        |> Tuple.mapFirst .departures
+                        |> Expect.equal ( For friday Loading, [ FetchDepartures friday ] )
             , test "are shown when they arrive" <|
                 \_ ->
                     withDepartures
@@ -45,19 +52,20 @@ suite =
                         |> step (GotDepartures friday (Ok Fixtures.departures))
                         |> .departures
                         |> Expect.equal (For saturday Loading)
-            , test "that could not be fetched say so" <|
+            , test "that could not be fetched say so, and can be asked for again" <|
                 \_ ->
                     opened
                         |> step (DateChanged "2026-11-20")
                         |> step (GotDepartures friday (Err Api.Offline))
-                        |> .departures
-                        |> Expect.equal (For friday (Failed Api.Offline))
-            , test "are not asked for until the date is a date" <|
+                        |> Expect.all
+                            [ .departures >> Expect.equal (For friday (Failed Api.Offline))
+                            , effects DeparturesRetried >> Expect.equal [ FetchDepartures friday ]
+                            ]
+            , test "are not asked for until the date is a whole date" <|
                 \_ ->
-                    opened
-                        |> step (DateChanged "2026-11-")
-                        |> .departures
-                        |> Expect.equal NoDate
+                    [ "2026-11-", "2026-11", "2026-W47-1", "i går" ]
+                        |> List.map (\typed -> NewClaim.update (DateChanged typed) opened |> Tuple.mapFirst .departures)
+                        |> Expect.equal (List.repeat 4 ( NoDate, [] ))
             , test "the chosen departure is dropped when the date changes" <|
                 \_ ->
                     withDepartures
@@ -69,30 +77,31 @@ suite =
             , test "today's date is filled in when the page opens" <|
                 \_ ->
                     opened
-                        |> step (GotToday friday)
-                        |> (\model -> ( model.draft.date, model.departures ))
-                        |> Expect.equal ( "2026-11-20", For friday Loading )
+                        |> NewClaim.update (GotToday friday)
+                        |> Tuple.mapFirst .date
+                        |> Expect.equal ( "2026-11-20", [ FetchDepartures friday ] )
             , test "but not over a date the passenger has already chosen" <|
                 \_ ->
                     opened
                         |> step (DateChanged "2026-11-21")
-                        |> step (GotToday friday)
-                        |> .draft
-                        |> .date
-                        |> Expect.equal "2026-11-21"
+                        |> NewClaim.update (GotToday friday)
+                        |> Tuple.mapFirst .date
+                        |> Expect.equal ( "2026-11-21", [] )
             ]
         , describe "the preview"
             [ test "is asked for as soon as the form is complete" <|
                 \_ ->
-                    complete
-                        |> .preview
-                        |> Expect.equal (PreviewFor claimA Loading)
+                    withDepartures
+                        |> step (DepartureChosen Fixtures.fb16.id)
+                        |> NewClaim.update (PriceChanged "349")
+                        |> Tuple.mapFirst .preview
+                        |> Expect.equal ( PreviewFor claimA Loading, [ AskForPreview claimA ] )
             , test "is not asked for while something is missing" <|
                 \_ ->
                     withDepartures
-                        |> step (PriceChanged "349")
-                        |> .preview
-                        |> Expect.equal NoPreview
+                        |> NewClaim.update (PriceChanged "349")
+                        |> Tuple.mapFirst .preview
+                        |> Expect.equal ( NoPreview, [] )
             , test "is shown when it arrives" <|
                 \_ ->
                     complete
@@ -105,7 +114,7 @@ suite =
                         |> step (PriceChanged "350")
                         |> step (GotPreview claimA (Ok notEligible))
                         |> .preview
-                        |> Expect.equal (PreviewFor { claimA | ticket = single 35000 } Loading)
+                        |> Expect.equal (PreviewFor { claimA | ticket = Single (ore 35000) } Loading)
             , test "goes away when the form stops being complete" <|
                 \_ ->
                     complete
@@ -117,9 +126,15 @@ suite =
                 \_ ->
                     complete
                         |> step (GotPreview claimA (Ok notEligible))
-                        |> step (PriceChanged "349,00")
-                        |> .preview
-                        |> Expect.equal (PreviewFor claimA (Loaded notEligible))
+                        |> NewClaim.update (PriceChanged "349,00")
+                        |> Tuple.mapFirst .preview
+                        |> Expect.equal ( PreviewFor claimA (Loaded notEligible), [] )
+            , test "that the service refuses puts the reason on the field, where the passenger can fix it" <|
+                \_ ->
+                    complete
+                        |> step (GotPreview claimA (Err (Api.Invalid [ { field = DepartureField, problem = DepartureInFuture } ])))
+                        |> (\model -> ( model.preview, model.errors ))
+                        |> Expect.equal ( NoPreview, [ { field = DepartureField, problem = DepartureInFuture } ] )
             ]
         , describe "expenses"
             [ test "start out with nothing typed" <|
@@ -140,23 +155,50 @@ suite =
                         |> Expect.equal NoExpenses
             ]
         , describe "sending"
-            [ test "a complete form is sent" <|
+            [ test "a complete form is sent, once" <|
+                \_ ->
+                    complete
+                        |> NewClaim.update Submitted
+                        |> Tuple.mapFirst .submission
+                        |> Expect.equal ( Submitting claimA, [ SendClaim claimA ] )
+            , test "nothing is sent twice while the first is on its way" <|
                 \_ ->
                     complete
                         |> step Submitted
-                        |> .submission
-                        |> Expect.equal Submitting
-            , test "an incomplete form is not sent, and says what is missing" <|
+                        |> effects Submitted
+                        |> Expect.equal []
+            , test "the form cannot be changed while the claim is on its way, so it cannot be sent again as something else" <|
+                \_ ->
+                    complete
+                        |> step Submitted
+                        |> step (PriceChanged "999")
+                        |> step (DateChanged "2026-11-21")
+                        |> step (ExpensesToggled True)
+                        |> Expect.all
+                            [ .submission >> Expect.equal (Submitting claimA)
+                            , .draft >> .price >> Expect.equal "349"
+                            , .date >> Expect.equal "2026-11-20"
+                            , effects Submitted >> Expect.equal []
+                            ]
+            , test "an incomplete form is not sent, says what is missing, and moves focus to the message" <|
                 \_ ->
                     withDepartures
-                        |> step Submitted
-                        |> (\model -> ( model.submission, model.errors ))
+                        |> NewClaim.update Submitted
+                        |> Tuple.mapFirst (\model -> ( model.submission, model.errors ))
                         |> Expect.equal
-                            ( NotSubmitted
-                            , [ { field = DepartureField, problem = Required }
-                              , { field = PriceField, problem = Required }
-                              ]
+                            ( ( NotSubmitted
+                              , [ { field = DepartureField, problem = Required }
+                                , { field = PriceField, problem = Required }
+                                ]
+                              )
+                            , [ FocusErrors ]
                             )
+            , test "nothing can be sent before the rules have arrived" <|
+                \_ ->
+                    Tuple.first NewClaim.init
+                        |> NewClaim.update Submitted
+                        |> Tuple.mapFirst .submission
+                        |> Expect.equal ( NotSubmitted, [] )
             , test "an error goes away when its field is changed" <|
                 \_ ->
                     withDepartures
@@ -164,33 +206,64 @@ suite =
                         |> step (PriceChanged "3")
                         |> .errors
                         |> Expect.equal [ { field = DepartureField, problem = Required } ]
+            , test "when the claim is stored, the page asks to show it" <|
+                \_ ->
+                    complete
+                        |> step Submitted
+                        |> effects (GotSubmit claimA (Ok Fixtures.approvedAutomatically))
+                        |> Expect.equal [ ShowClaim Fixtures.idA ]
             , test "what the service will not accept is shown on the fields" <|
                 \_ ->
                     complete
                         |> step Submitted
-                        |> step (GotSubmit (Err (Api.Invalid [ { field = DepartureField, problem = DepartureInFuture } ])))
-                        |> (\model -> ( model.submission, model.errors ))
-                        |> Expect.equal ( NotSubmitted, [ { field = DepartureField, problem = DepartureInFuture } ] )
+                        |> NewClaim.update (GotSubmit claimA (Err (Api.Invalid [ { field = DepartureField, problem = DepartureInFuture } ])))
+                        |> Tuple.mapFirst (\model -> ( model.submission, model.errors ))
+                        |> Expect.equal
+                            ( ( NotSubmitted, [ { field = DepartureField, problem = DepartureInFuture } ] )
+                            , [ FocusErrors ]
+                            )
             , test "a failure that is not about the fields keeps everything that was typed" <|
                 \_ ->
                     complete
                         |> step Submitted
-                        |> step (GotSubmit (Err Api.Offline))
+                        |> step (GotSubmit claimA (Err Api.Offline))
                         |> (\model -> ( model.submission, model.draft.price ))
                         |> Expect.equal ( SubmitFailed Api.Offline, "349" )
-            , test "nothing is sent twice while the first is on its way" <|
+            , test "the failure goes away when the passenger changes something, the date included" <|
+                \_ ->
+                    [ PriceChanged "350", DateChanged "2026-11-21" ]
+                        |> List.map
+                            (\change ->
+                                complete
+                                    |> step Submitted
+                                    |> step (GotSubmit claimA (Err Api.Offline))
+                                    |> step change
+                                    |> .submission
+                            )
+                        |> Expect.equal [ NotSubmitted, NotSubmitted ]
+            , test "an answer about a claim this page did not send is ignored" <|
+                \_ ->
+                    -- The passenger sent a claim, left, and came back to an empty form.
+                    opened
+                        |> NewClaim.update (GotSubmit claimA (Err (Api.Invalid [ { field = PriceField, problem = AboveMaximum } ])))
+                        |> Tuple.mapFirst .errors
+                        |> Expect.equal ( [], [] )
+            ]
+        , describe "what the passenger sees"
+            [ test "a missing departure is pointed out even when there is no list to mark" <|
+                \_ ->
+                    opened
+                        |> step Submitted
+                        |> view
+                        |> Query.has [ Selector.text "Velg en avgang." ]
+            , test "the fields are locked while the claim is on its way" <|
                 \_ ->
                     complete
                         |> step Submitted
-                        |> step Submitted
-                        |> .submission
-                        |> Expect.equal Submitting
+                        |> view
+                        |> Query.find [ Selector.tag "fieldset", Selector.class "claim-form__fields" ]
+                        |> Query.has [ Selector.disabled True ]
             ]
-        , test "the form cannot be used until the rules have arrived" <|
-            \_ ->
-                Tuple.first NewClaim.init
-                    |> .rules
-                    |> Expect.equal Loading
         ]
 
 
@@ -202,11 +275,6 @@ friday =
 saturday : Date
 saturday =
     Date.fromCalendarDate 2026 Nov 21
-
-
-single : Int -> Claim.Ticket.Ticket
-single ore =
-    Claim.Ticket.Single (Money.fromOre ore)
 
 
 claimA : NewClaim
@@ -222,12 +290,21 @@ notEligible =
     NotEligible DelayBelowThreshold
 
 
-{-| One message, with a navigation that goes nowhere.
--}
 step : Msg -> NewClaim.Model -> NewClaim.Model
 step msg model =
-    NewClaim.update (\_ -> Cmd.none) msg model
+    NewClaim.update msg model
         |> Tuple.first
+
+
+effects : Msg -> NewClaim.Model -> List Effect
+effects msg model =
+    NewClaim.update msg model
+        |> Tuple.second
+
+
+view : NewClaim.Model -> Query.Single Msg
+view model =
+    Query.fromHtml (Html.div [] (NewClaim.view model).body)
 
 
 {-| The page with the rules loaded.

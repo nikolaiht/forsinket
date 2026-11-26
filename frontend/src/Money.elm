@@ -1,5 +1,5 @@
 module Money exposing
-    ( Money, zero, fromOre, toOre, add
+    ( Money, zero, fromOre, toOre
     , ParseError(..), parse, format
     , decoder, encode
     )
@@ -10,7 +10,7 @@ The type is opaque, so the only ways to get a `Money` are the ones below, and
 none of them gives a negative amount or a fraction of an øre. Code that has a
 `Money` does not have to check it again.
 
-@docs Money, zero, fromOre, toOre, add
+@docs Money, zero, fromOre, toOre
 @docs ParseError, parse, format
 @docs decoder, encode
 
@@ -29,22 +29,21 @@ zero =
     Money 0
 
 
-{-| An amount from a number of øre. A negative number is not an amount, and
-becomes zero.
+{-| An amount from a number of øre, when there is such an amount: a negative
+number is not one.
 -}
-fromOre : Int -> Money
+fromOre : Int -> Maybe Money
 fromOre ore =
-    Money (max 0 ore)
+    if ore < 0 then
+        Nothing
+
+    else
+        Just (Money ore)
 
 
 toOre : Money -> Int
 toOre (Money ore) =
     ore
-
-
-add : Money -> Money -> Money
-add (Money a) (Money b) =
-    Money (a + b)
 
 
 
@@ -57,11 +56,11 @@ type ParseError
 
 
 {-| Read an amount the way people type it: `349`, `349,50`, `349.50`,
-`1 234,50` or `349 kr`.
+`1 234,50`, `349 kr`, `kr 349` or `349,-`.
 
-Spaces are ignored, so are a trailing `kr`, and both comma and full stop work
-as the decimal sign. Anything else is not an amount: a sign, letters, more than
-two decimals, or more digits than any ticket could cost.
+Spaces are ignored, so is `kr` before or after, and both comma and full stop
+work as the decimal sign. Anything else is not an amount: a sign, letters, more
+than two decimals, or more digits than any ticket could cost.
 
 -}
 parse : String -> Result ParseError Money
@@ -77,6 +76,10 @@ parse input =
     else
         case String.split "," (String.replace "." "," (withoutUnit withoutSpaces)) of
             [ kroner ] ->
+                fromParts kroner "00"
+
+            [ kroner, "-" ] ->
+                -- "349,-" is how a price in whole kroner is written on a ticket.
                 fromParts kroner "00"
 
             [ kroner, ore ] ->
@@ -122,9 +125,19 @@ isSpace char =
     char == ' ' || char == nonBreakingSpace || char == '\t' || char == '\u{202F}'
 
 
+{-| `kr` in front or behind, but not both.
+-}
 withoutUnit : String -> String
 withoutUnit text =
-    if String.endsWith "kr" (String.toLower text) then
+    let
+        lower : String
+        lower =
+            String.toLower text
+    in
+    if String.startsWith "kr" lower then
+        String.dropLeft 2 text
+
+    else if String.endsWith "kr" lower then
         String.dropRight 2 text
 
     else

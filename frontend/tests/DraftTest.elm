@@ -80,8 +80,7 @@ suite =
         , test "every problem is reported at once" <|
             \_ ->
                 validate
-                    { date = "2026-11-20"
-                    , departure = Nothing
+                    { departure = Nothing
                     , ticketKind = SingleKind
                     , price = "gratis"
                     , expenses = WithExpenses { amount = "", kind = Expenses.Taxi }
@@ -109,8 +108,7 @@ validate =
 -}
 complete : Draft
 complete =
-    { date = "2026-11-20"
-    , departure = Just Fixtures.fb16.id
+    { departure = Just Fixtures.fb16.id
     , ticketKind = SingleKind
     , price = "349"
     , expenses = NoExpenses
@@ -143,8 +141,7 @@ draftFor claim =
                 Period amount validity ->
                     ( PeriodKind validity, amount )
     in
-    { date = "2026-11-20"
-    , departure = Just claim.departureId
+    { departure = Just claim.departureId
     , ticketKind = ticketKind
     , price = Money.format price
     , expenses =
@@ -170,7 +167,7 @@ anyTicket =
     let
         price : Fuzzer Money.Money
         price =
-            Fuzz.map Money.fromOre (Fuzz.intRange 1 (Money.toOre Fixtures.rules.maxTicketPrice))
+            Fuzz.map Fixtures.ore (Fuzz.intRange 1 (Money.toOre Fixtures.rules.maxTicketPrice))
     in
     Fuzz.oneOf
         [ Fuzz.map Single price
@@ -181,5 +178,5 @@ anyTicket =
 anyExpenses : Fuzzer Expenses
 anyExpenses =
     Fuzz.map2 Expenses
-        (Fuzz.map Money.fromOre (Fuzz.intRange 1 (Money.toOre Fixtures.rules.maxClaimedExpenses)))
+        (Fuzz.map Fixtures.ore (Fuzz.intRange 1 (Money.toOre Fixtures.rules.maxClaimedExpenses)))
         (Fuzz.oneOfValues Expenses.kinds)

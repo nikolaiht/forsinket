@@ -1,4 +1,4 @@
-module Page.Claim exposing (Model, Msg, init, update, view)
+module Page.Claim exposing (Effect(..), Model, Msg(..), init, perform, update, view)
 
 {-| A passenger's view of one claim.
 -}
@@ -10,7 +10,6 @@ import Html exposing (Html, a, h1, p, text)
 import Html.Attributes exposing (class)
 import Remote exposing (Remote(..))
 import Route
-import Time
 import View.Claim
 import View.Layout
 import View.Problem
@@ -22,28 +21,46 @@ type alias Model =
     }
 
 
-init : Id -> ( Model, Cmd Msg )
+type Effect
+    = FetchClaim Id
+
+
+init : Id -> ( Model, List Effect )
 init id =
-    ( { id = id, claim = Loading }, Api.getClaim id GotClaim )
+    ( { id = id, claim = Loading }, [ FetchClaim id ] )
 
 
+{-| An answer says which claim it is about, so that one that arrives after
+the page has moved on to another claim is not shown as that claim.
+-}
 type Msg
-    = GotClaim (Result Api.Error Claim)
+    = GotClaim Id (Result Api.Error Claim)
     | Retried
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> ( Model, List Effect )
 update msg model =
     case msg of
-        GotClaim result ->
-            ( { model | claim = Remote.fromResult result }, Cmd.none )
+        GotClaim id result ->
+            if id == model.id then
+                ( { model | claim = Remote.fromResult result }, [] )
+
+            else
+                ( model, [] )
 
         Retried ->
-            ( { model | claim = Loading }, Api.getClaim model.id GotClaim )
+            ( { model | claim = Loading }, [ FetchClaim model.id ] )
 
 
-view : Time.Zone -> Model -> { title : String, body : List (Html Msg) }
-view zone model =
+perform : Effect -> Cmd Msg
+perform effect =
+    case effect of
+        FetchClaim id ->
+            Api.getClaim id (GotClaim id)
+
+
+view : Model -> { title : String, body : List (Html Msg) }
+view model =
     { title = "Kravet ditt"
     , body =
         h1 [] [ text "Kravet ditt" ]
@@ -59,7 +76,7 @@ view zone model =
                         [ View.Problem.view { retry = Just ( "Prøv igjen", Retried ) } error ]
 
                     Loaded claim ->
-                        [ View.Claim.view zone claim
+                        [ View.Claim.view claim
                         , p [ class "reference" ]
                             [ text ("Referanse: " ++ Id.toString claim.id ++ ". Ta vare på adressen til denne siden, så kan du følge kravet her.") ]
                         , p [ class "reference" ]

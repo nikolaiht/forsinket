@@ -1,4 +1,4 @@
-module Page.ReviewClaim exposing (Model, Msg(..), Saving(..), init, update, view)
+module Page.ReviewClaim exposing (Effect(..), Model, Msg(..), Saving(..), init, perform, update, view)
 
 {-| An officer's view of one claim: the same facts the passenger sees, and
 the decision that is theirs to make.
@@ -11,9 +11,10 @@ the status: the view matches on the status, and so does `update`.
 -}
 
 import Api
+import Browser.Dom as Dom
 import Claim exposing (Claim, Status(..))
 import Claim.Calculation exposing (Calculation, ExpenseAssessment(..))
-import Claim.Decision as Decision exposing (Choice(..))
+import Claim.Decision as Decision exposing (Choice(..), Decision)
 import Claim.Id exposing (Id)
 import Claim.Reason as Reason exposing (RejectionReason(..))
 import FieldError exposing (Field(..), FieldError)
@@ -24,9 +25,9 @@ import Money exposing (Money)
 import Remote exposing (Remote(..))
 import Route
 import Status
-import Time
+import Task
 import View.Claim
-import View.Form
+import View.Form exposing (InputMode(..))
 import View.Layout
 import View.Problem
 import View.Text as Text
@@ -47,7 +48,18 @@ type Saving
     | SaveFailed Api.Error
 
 
-init : Id -> ( Model, Cmd Msg )
+{-| What the page asks to have done. `update` returns these as values, and
+`perform` turns them into commands. A test can therefore check that a decision
+is sent for the right claim and the right version, without sending anything.
+-}
+type Effect
+    = FetchClaim Id
+    | SendDecision Id Int Decision
+    | SendPayout Id Int
+    | FocusErrors
+
+
+init : Id -> ( Model, List Effect )
 init id =
     ( { id = id
       , claim = Loading
@@ -55,7 +67,7 @@ init id =
       , saving = Idle
       , errors = []
       }
-    , Api.getClaim id GotClaim
+    , [ FetchClaim id ]
     )
 
 
@@ -63,8 +75,12 @@ init id =
 -- UPDATE
 
 
+{-| Every answer says which claim it is about. An answer about another claim
+than the one on the page, from a request made before the officer moved on, is
+dropped: showing it would put one claim's facts above another claim's form.
+-}
 type Msg
-    = GotClaim (Result Api.Error Claim)
+    = GotClaim Id (Result Api.Error Claim)
     | Reloaded
     | ChoiceChanged Choice
     | ApprovedExpensesChanged String
@@ -72,34 +88,40 @@ type Msg
     | OfficerChanged String
     | DecisionSubmitted
     | PayoutRequested
-    | GotSaved (Result Api.Error Claim)
+    | GotSaved Id (Result Api.Error Claim)
+    | NoOp
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> ( Model, List Effect )
 update msg model =
     case msg of
-        GotClaim result ->
-            ( { model | claim = Remote.fromResult result }, Cmd.none )
+        GotClaim id result ->
+            if id == model.id then
+                ( { model | claim = Remote.fromResult result }, [] )
+
+            else
+                ( model, [] )
 
         Reloaded ->
-            ( { model | claim = Loading, saving = Idle }, Api.getClaim model.id GotClaim )
+            ( { model | claim = Loading, saving = Idle }, [ FetchClaim model.id ] )
 
         ChoiceChanged choice ->
-            ( edit ReasonField (\draft -> { draft | choice = choice }) model, Cmd.none )
+            -- The errors were about the fields of the other verdict.
+            ( { model | draft = withChoice choice model.draft, errors = [] }, [] )
 
         ApprovedExpensesChanged amount ->
-            ( edit ApprovedExpensesField (\draft -> { draft | approvedExpenses = amount }) model, Cmd.none )
+            ( edit ApprovedExpensesField (\draft -> { draft | approvedExpenses = amount }) model, [] )
 
         NoteChanged note ->
-            ( edit NoteField (\draft -> { draft | note = note }) model, Cmd.none )
+            ( edit NoteField (\draft -> { draft | note = note }) model, [] )
 
         OfficerChanged officer ->
-            ( edit OfficerField (\draft -> { draft | officer = officer }) model, Cmd.none )
+            ( edit OfficerField (\draft -> { draft | officer = officer }) model, [] )
 
         DecisionSubmitted ->
             case ( model.saving, model.claim ) of
                 ( Saving, _ ) ->
-                    ( model, Cmd.none )
+                    ( model, [] )
 
                 ( _, Loaded claim ) ->
                     case claim.status of
@@ -107,43 +129,63 @@ update msg model =
                             case Decision.validate { maxCoverable = maxCoverable calculation } model.draft of
                                 Ok decision ->
                                     ( { model | saving = Saving, errors = [] }
-                                    , Api.postDecision claim.id claim.version decision GotSaved
+                                    , [ SendDecision claim.id claim.version decision ]
                                     )
 
                                 Err errors ->
-                                    ( { model | saving = Idle, errors = errors }, Cmd.none )
+                                    ( { model | saving = Idle, errors = errors }, [ FocusErrors ] )
 
                         _ ->
-                            ( model, Cmd.none )
+                            ( model, [] )
 
                 _ ->
-                    ( model, Cmd.none )
+                    ( model, [] )
 
         PayoutRequested ->
             case ( model.saving, model.claim ) of
                 ( Saving, _ ) ->
-                    ( model, Cmd.none )
+                    ( model, [] )
 
                 ( _, Loaded claim ) ->
                     case claim.status of
                         Approved _ ->
-                            ( { model | saving = Saving }, Api.postPayout claim.id claim.version GotSaved )
+                            ( { model | saving = Saving }, [ SendPayout claim.id claim.version ] )
 
                         _ ->
-                            ( model, Cmd.none )
+                            ( model, [] )
 
                 _ ->
-                    ( model, Cmd.none )
+                    ( model, [] )
 
-        GotSaved (Ok claim) ->
-            ( { model | claim = Loaded claim, draft = Decision.empty, saving = Idle, errors = [] }, Cmd.none )
+        GotSaved id result ->
+            if id == model.id then
+                saved result model
 
-        GotSaved (Err (Api.Invalid errors)) ->
-            ( { model | saving = Idle, errors = errors }, Cmd.none )
+            else
+                ( model, [] )
 
-        GotSaved (Err error) ->
+        NoOp ->
+            ( model, [] )
+
+
+saved : Result Api.Error Claim -> Model -> ( Model, List Effect )
+saved result model =
+    case ( result, Remote.map .status model.claim ) of
+        ( Ok claim, _ ) ->
+            ( { model | claim = Loaded claim, draft = Decision.empty, saving = Idle, errors = [] }, [] )
+
+        ( Err (Api.Invalid errors), Loaded (AwaitingReview _) ) ->
+            -- The decision form is on the page, so its fields can show what was refused.
+            ( { model | saving = Idle, errors = errors }, [ FocusErrors ] )
+
+        ( Err error, _ ) ->
             -- What the officer typed is kept, so nothing has to be written twice.
-            ( { model | saving = SaveFailed error }, Cmd.none )
+            ( { model | saving = SaveFailed error }, [] )
+
+
+withChoice : Choice -> Decision.Draft -> Decision.Draft
+withChoice choice draft =
+    { draft | choice = choice }
 
 
 edit : Field -> (Decision.Draft -> Decision.Draft) -> Model -> Model
@@ -167,12 +209,28 @@ maxCoverable calculation =
             Nothing
 
 
+perform : Effect -> Cmd Msg
+perform effect =
+    case effect of
+        FetchClaim id ->
+            Api.getClaim id (GotClaim id)
+
+        SendDecision id version decision ->
+            Api.postDecision id version decision (GotSaved id)
+
+        SendPayout id version ->
+            Api.postPayout id version (GotSaved id)
+
+        FocusErrors ->
+            Task.attempt (\_ -> NoOp) (Dom.focus View.Problem.formErrorsId)
+
+
 
 -- VIEW
 
 
-view : Time.Zone -> Model -> { title : String, body : List (Html Msg) }
-view zone model =
+view : Model -> { title : String, body : List (Html Msg) }
+view model =
     { title = "Behandle krav"
     , body =
         p [ class "back" ] [ a [ Route.href (Route.ReviewQueue (Route.Only Status.AwaitingReview)) ] [ text "Til listen over krav" ] ]
@@ -188,7 +246,7 @@ view zone model =
                         [ View.Problem.view { retry = Just ( "Prøv igjen", Reloaded ) } error ]
 
                     Loaded claim ->
-                        [ View.Claim.view zone claim
+                        [ View.Claim.view claim
                         , section [ class "decision" ]
                             (h2 [] [ text "Vedtak" ]
                                 :: viewActions claim model
@@ -205,6 +263,16 @@ view zone model =
     }
 
 
+isSaving : Model -> Bool
+isSaving model =
+    case model.saving of
+        Saving ->
+            True
+
+        _ ->
+            False
+
+
 {-| What can be done to the claim as it stands.
 -}
 viewActions : Claim -> Model -> List (Html Msg)
@@ -215,9 +283,9 @@ viewActions claim model =
 
         Approved { calculation } ->
             [ p [] [ text ("Kravet er innvilget. " ++ Money.format calculation.total ++ " er klart til utbetaling.") ]
-            , button [ type_ "button", class "button", onClick PayoutRequested, disabled (model.saving == Saving) ]
+            , button [ type_ "button", class "button", onClick PayoutRequested, disabled (isSaving model) ]
                 [ text
-                    (if model.saving == Saving then
+                    (if isSaving model then
                         "Registrerer …"
 
                      else
@@ -242,32 +310,33 @@ viewDecisionForm calculation model =
         problems : Field -> Maybe String -> List String
         problems field limit =
             FieldError.for field model.errors
-                |> List.map (View.Problem.field { limit = limit })
+                |> List.map (View.Problem.field { limit = limit } field)
 
-        isApproving : Bool
-        isApproving =
-            model.draft.choice == Approving
+        -- The reject option carries the reason that is chosen, or the first
+        -- one, so that picking "reject" always gives a complete choice.
+        rejecting : Choice
+        rejecting =
+            case model.draft.choice of
+                Rejecting reason ->
+                    Rejecting reason
+
+                Approving ->
+                    Rejecting InvalidTicket
     in
     form [ class "decision__form", onSubmit DecisionSubmitted, novalidate True ]
         (List.concat
             [ [ View.Form.choice
                     { name = "vedtak"
                     , legend = "Hva blir vedtaket?"
-                    , options = [ ( "Innvilg kravet", True ), ( "Avslå kravet", False ) ]
-                    , chosen = Just isApproving
-                    , onChoose =
-                        \approve ->
-                            if approve then
-                                ChoiceChanged Approving
-
-                            else
-                                ChoiceChanged (Rejecting InvalidTicket)
+                    , options = [ ( "Innvilg kravet", Approving ), ( "Avslå kravet", rejecting ) ]
+                    , chosen = model.draft.choice
+                    , onChoose = ChoiceChanged
                     , problems = []
                     }
               ]
             , case ( model.draft.choice, maxCoverable calculation ) of
                 ( Approving, Just limit ) ->
-                    [ View.Form.textField "decimal"
+                    [ View.Form.textField Decimal
                         { id = "godkjent-utlegg"
                         , label = "Hvor mye av utlegget godkjennes?"
                         , hint =
@@ -298,9 +367,9 @@ viewDecisionForm calculation model =
                     [ View.Form.choice
                         { name = "grunn"
                         , legend = "Hvorfor avslås kravet?"
-                        , options = List.map (\option -> ( Text.rejectionReason option, option )) Reason.rejectionReasons
-                        , chosen = Just reason
-                        , onChoose = \option -> ChoiceChanged (Rejecting option)
+                        , options = List.map (\option -> ( Text.rejectionReason option, Rejecting option )) Reason.rejectionReasons
+                        , chosen = Rejecting reason
+                        , onChoose = ChoiceChanged
                         , problems = problems ReasonField Nothing
                         }
                     ]
@@ -309,17 +378,18 @@ viewDecisionForm calculation model =
                     , label = "Begrunnelse"
                     , hint =
                         Just
-                            (if isApproving then
-                                "Valgfritt. Passasjeren ser det du skriver."
+                            (case model.draft.choice of
+                                Approving ->
+                                    "Valgfritt. Passasjeren ser det du skriver."
 
-                             else
-                                "Forklar avslaget. Passasjeren ser det du skriver."
+                                Rejecting _ ->
+                                    "Forklar avslaget. Passasjeren ser det du skriver."
                             )
                     , value = model.draft.note
                     , onInput = NoteChanged
                     , problems = problems NoteField Nothing
                     }
-              , View.Form.textField "text"
+              , View.Form.textField Text
                     { id = "saksbehandler"
                     , label = "Dine initialer"
                     , hint = Just "2 til 10 bokstaver."
@@ -328,16 +398,16 @@ viewDecisionForm calculation model =
                     , problems = problems OfficerField Nothing
                     }
               , View.Problem.formErrors "Vedtaket er ikke lagret. Rett opp det som er markert, og prøv igjen." model.errors
-              , button [ type_ "submit", class "button", disabled (model.saving == Saving) ]
+              , button [ type_ "submit", class "button", disabled (isSaving model) ]
                     [ text
-                        (case ( model.saving, isApproving ) of
+                        (case ( model.saving, model.draft.choice ) of
                             ( Saving, _ ) ->
                                 "Lagrer vedtaket …"
 
-                            ( _, True ) ->
+                            ( _, Approving ) ->
                                 "Innvilg kravet"
 
-                            ( _, False ) ->
+                            ( _, Rejecting _ ) ->
                                 "Avslå kravet"
                         )
                     ]

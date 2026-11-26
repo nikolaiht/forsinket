@@ -1,4 +1,4 @@
-module Claim.Decision exposing (Choice(..), Decision, Draft, Verdict(..), empty, encode, validate)
+module Claim.Decision exposing (Choice(..), Decision, Draft, Verdict(..), empty, encode, maxNoteLength, validate)
 
 {-| The form an officer decides a claim with.
 
@@ -11,7 +11,7 @@ import Claim.Reason as Reason exposing (RejectionReason)
 import FieldError exposing (Field(..), FieldError, Problem(..))
 import Json.Encode as Encode
 import Money exposing (Money)
-import Validation
+import Validation exposing (Minimum(..))
 
 
 type alias Draft =
@@ -77,7 +77,7 @@ verdictOf maxCoverable draft =
             Ok (Approve Money.zero)
 
         ( Approving, Just limit ) ->
-            Validation.amount ApprovedExpensesField { atLeast = Money.zero, atMost = limit } draft.approvedExpenses
+            Validation.amount ApprovedExpensesField { atLeast = ZeroOrMore, atMost = limit } draft.approvedExpenses
                 |> Result.map Approve
 
 
@@ -93,11 +93,13 @@ noteOf draft =
     if String.length note > maxNoteLength then
         Err [ { field = NoteField, problem = TooLong } ]
 
-    else if String.isEmpty note && draft.choice /= Approving then
-        Err [ { field = NoteField, problem = Required } ]
-
     else
-        Ok note
+        case ( draft.choice, note ) of
+            ( Rejecting _, "" ) ->
+                Err [ { field = NoteField, problem = Required } ]
+
+            _ ->
+                Ok note
 
 
 maxNoteLength : Int

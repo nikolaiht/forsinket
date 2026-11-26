@@ -1,4 +1,4 @@
-module Page.ReviewQueue exposing (Model, Msg, init, update, view)
+module Page.ReviewQueue exposing (Effect(..), Model, Msg(..), init, perform, update, view)
 
 {-| The officers' list of claims.
 -}
@@ -6,12 +6,11 @@ module Page.ReviewQueue exposing (Model, Msg, init, update, view)
 import Api
 import Claim
 import Html exposing (Html, a, h1, nav, p, table, tbody, td, text, th, thead, tr)
-import Html.Attributes exposing (attribute, class, scope)
+import Html.Attributes exposing (attribute, class, datetime, scope)
 import Money
 import Remote exposing (Remote(..))
 import Route exposing (Filter(..))
 import Status
-import Time
 import View.Format as Format
 import View.Layout
 import View.Problem
@@ -24,14 +23,42 @@ type alias Model =
     }
 
 
-init : Filter -> ( Model, Cmd Msg )
+type Effect
+    = FetchClaims Filter
+
+
+init : Filter -> ( Model, List Effect )
 init filter =
-    ( { filter = filter, claims = Loading }, fetch filter )
+    ( { filter = filter, claims = Loading }, [ FetchClaims filter ] )
 
 
-fetch : Filter -> Cmd Msg
-fetch filter =
-    Api.getClaims (statusOf filter) GotClaims
+{-| An answer says which filter it is for. Clicking two tabs quickly sends
+two requests, and the answers can come back in either order.
+-}
+type Msg
+    = GotClaims Filter (Result Api.Error (List Claim.Summary))
+    | Retried
+
+
+update : Msg -> Model -> ( Model, List Effect )
+update msg model =
+    case msg of
+        GotClaims filter result ->
+            if filter == model.filter then
+                ( { model | claims = Remote.fromResult result }, [] )
+
+            else
+                ( model, [] )
+
+        Retried ->
+            ( { model | claims = Loading }, [ FetchClaims model.filter ] )
+
+
+perform : Effect -> Cmd Msg
+perform effect =
+    case effect of
+        FetchClaims filter ->
+            Api.getClaims (statusOf filter) (GotClaims filter)
 
 
 statusOf : Filter -> Maybe Status.Name
@@ -44,23 +71,8 @@ statusOf filter =
             Just status
 
 
-type Msg
-    = GotClaims (Result Api.Error (List Claim.Summary))
-    | Retried
-
-
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
-    case msg of
-        GotClaims result ->
-            ( { model | claims = Remote.fromResult result }, Cmd.none )
-
-        Retried ->
-            ( { model | claims = Loading }, fetch model.filter )
-
-
-view : Time.Zone -> Model -> { title : String, body : List (Html Msg) }
-view zone model =
+view : Model -> { title : String, body : List (Html Msg) }
+view model =
     { title = "Saksbehandling"
     , body =
         [ h1 [] [ text "Saksbehandling" ]
@@ -95,7 +107,7 @@ view zone model =
                             , th [ scope "col", class "claims__amount" ] [ text "Sum" ]
                             ]
                         ]
-                    , tbody [] (List.map (row zone) claims)
+                    , tbody [] (List.map row claims)
                     ]
         ]
     }
@@ -115,14 +127,15 @@ tab current ( label, filter ) =
         [ text label ]
 
 
-row : Time.Zone -> Claim.Summary -> Html msg
-row zone claim =
+row : Claim.Summary -> Html msg
+row claim =
     tr []
         [ th [ scope "row" ]
             [ a [ Route.href (Route.ReviewClaim claim.id) ]
                 [ text (claim.trainNumber ++ " " ++ Format.date claim.departureDate) ]
             ]
-        , td [] [ text (Format.dateTime zone claim.submittedAt) ]
+        , td []
+            [ Html.time [ datetime (Format.machineTime claim.submittedAt) ] [ text (Format.dateTime claim.submittedAt) ] ]
         , td [] [ View.Status.badge claim.status ]
         , td [ class "claims__amount" ]
             [ text

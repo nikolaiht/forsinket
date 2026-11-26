@@ -34,7 +34,7 @@ view calculation =
                 ]
             )
         , p [ class "receipt__foot" ]
-            [ text ("Regnet ut etter Fjordbanens reisevilkår, versjon " ++ calculation.ruleSetVersion ++ ".") ]
+            [ text ("Regnet ut etter Fjordbanens reisevilkår (" ++ calculation.ruleSetVersion ++ ").") ]
         ]
 
 
@@ -68,7 +68,7 @@ expensesRows expenses =
 
         NotCovered claimed ->
             [ row "Utlegg"
-                (Just ("Krevd " ++ Money.format claimed ++ ". Dekkes ikke, fordi forsinkelsen var for kort."))
+                (Just ("Krevd " ++ Money.format claimed ++ ". Dekkes ikke fordi forsinkelsen er for kort."))
                 (Money.format Money.zero)
             ]
 
@@ -129,7 +129,5 @@ handlingText handling =
         AutoApprove ->
             "Kravet innvilges med en gang."
 
-        ManualReview ( first, rest ) ->
-            "Kravet går til en saksbehandler, fordi "
-                ++ String.join " og " (List.map Text.reviewReason (first :: rest))
-                ++ "."
+        ManualReview reasons ->
+            "Kravet går til en saksbehandler fordi " ++ Text.reviewReasons reasons ++ "."

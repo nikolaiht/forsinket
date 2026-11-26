@@ -15,14 +15,12 @@ import Claim.Ticket as Ticket exposing (Ticket(..), Validity)
 import Departure
 import FieldError exposing (Field(..), FieldError, Problem(..))
 import Json.Encode as Encode
-import Money
 import Rules exposing (Rules)
-import Validation
+import Validation exposing (Minimum(..))
 
 
 type alias Draft =
-    { date : String
-    , departure : Maybe Departure.Id
+    { departure : Maybe Departure.Id
     , ticketKind : TicketKind
     , price : String
     , expenses : ExpensesDraft
@@ -44,8 +42,7 @@ type ExpensesDraft
 
 empty : Draft
 empty =
-    { date = ""
-    , departure = Nothing
+    { departure = Nothing
     , ticketKind = SingleKind
     , price = ""
     , expenses = NoExpenses
@@ -78,7 +75,7 @@ departure chosen =
 
 ticket : Rules -> Draft -> Result (List FieldError) Ticket
 ticket rules draft =
-    Validation.amount PriceField { atLeast = Money.fromOre 1, atMost = rules.maxTicketPrice } draft.price
+    Validation.amount PriceField { atLeast = MoreThanZero, atMost = rules.maxTicketPrice } draft.price
         |> Result.map
             (\price ->
                 case draft.ticketKind of
@@ -97,7 +94,7 @@ expenses rules draft =
             Ok Nothing
 
         WithExpenses { amount, kind } ->
-            Validation.amount ExpensesAmountField { atLeast = Money.fromOre 1, atMost = rules.maxClaimedExpenses } amount
+            Validation.amount ExpensesAmountField { atLeast = MoreThanZero, atMost = rules.maxClaimedExpenses } amount
                 |> Result.map (\claimed -> Just { amount = claimed, kind = kind })
 
 

@@ -1,11 +1,32 @@
-module View.Format exposing (date, dateTime, minutes, outcome)
+module View.Format exposing (date, dateIn, dateTime, machineTime, minutes, oslo, outcome)
 
 {-| Dates, times and delays, written the way they are written in Norway.
+
+Every time on the pages is Oslo time, because that is the time the timetable
+is written in. A passenger reading the page abroad sees the same clock times
+as the departure board did.
+
 -}
 
 import Date exposing (Date)
 import Departure exposing (Outcome(..))
+import Iso8601
 import Time exposing (Posix)
+import TimeZone
+
+
+{-| The time in Oslo, with its summer time rules. `Time.here` would only give
+the offset that applies today, and get a time on the other side of a clock
+change wrong by an hour.
+
+The package has no zone called Oslo. In the time zone database Oslo is an
+alias for Berlin, whose clock it has matched since 1970, so Berlin is the
+zone to ask for.
+
+-}
+oslo : Time.Zone
+oslo =
+    TimeZone.europe__berlin ()
 
 
 {-| `20.11.2026`
@@ -15,15 +36,27 @@ date value =
     twoDigits (Date.day value) ++ "." ++ twoDigits (Date.monthNumber value) ++ "." ++ String.fromInt (Date.year value)
 
 
-{-| `21.11.2026 kl. 10:15`, in the time zone of whoever is reading.
+dateIn : Time.Zone -> Posix -> Date
+dateIn zone posix =
+    Date.fromPosix zone posix
+
+
+{-| `21.11.2026 kl. 10:15`
 -}
-dateTime : Time.Zone -> Posix -> String
-dateTime zone posix =
-    date (Date.fromPosix zone posix)
+dateTime : Posix -> String
+dateTime posix =
+    date (dateIn oslo posix)
         ++ " kl. "
-        ++ twoDigits (Time.toHour zone posix)
+        ++ twoDigits (Time.toHour oslo posix)
         ++ ":"
-        ++ twoDigits (Time.toMinute zone posix)
+        ++ twoDigits (Time.toMinute oslo posix)
+
+
+{-| The same point in time for a `datetime` attribute.
+-}
+machineTime : Posix -> String
+machineTime posix =
+    Iso8601.fromTime posix
 
 
 outcome : Outcome -> String

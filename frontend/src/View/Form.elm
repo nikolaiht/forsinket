@@ -1,4 +1,4 @@
-module View.Form exposing (Field, choice, textArea, textField)
+module View.Form exposing (Field, InputMode(..), choice, textArea, textField)
 
 {-| Form fields that are put together the same way every time: a label tied
 to its input, a hint, and the problems with what was typed, each tied to the
@@ -20,10 +20,14 @@ type alias Field msg =
     }
 
 
-{-| A one-line field. `inputMode` picks the keyboard on a phone: `"decimal"`
-for amounts, `"text"` otherwise.
+{-| Which keyboard a phone shows for the field.
 -}
-textField : String -> Field msg -> Html msg
+type InputMode
+    = Text
+    | Decimal
+
+
+textField : InputMode -> Field msg -> Html msg
 textField inputMode field =
     wrapper field
         (input
@@ -32,7 +36,14 @@ textField inputMode field =
              , class "field__input"
              , value field.value
              , onInput field.onInput
-             , attribute "inputmode" inputMode
+             , attribute "inputmode"
+                (case inputMode of
+                    Text ->
+                        "text"
+
+                    Decimal ->
+                        "decimal"
+                )
              , attribute "autocomplete" "off"
              ]
                 ++ describedBy field
@@ -119,7 +130,7 @@ choice :
     { name : String
     , legend : String
     , options : List ( String, a )
-    , chosen : Maybe a
+    , chosen : a
     , onChoose : a -> msg
     , problems : List String
     }
@@ -142,7 +153,7 @@ choice config =
                             [ type_ "radio"
                             , name config.name
                             , id (config.name ++ "-" ++ String.fromInt index)
-                            , checked (config.chosen == Just option)
+                            , checked (config.chosen == option)
                             , onCheck (\_ -> config.onChoose option)
                             ]
                             []

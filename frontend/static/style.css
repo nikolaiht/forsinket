@@ -135,6 +135,14 @@ a:hover {
   top: 1rem;
 }
 
+/* Focus is moved here by the program, when the page changes or a form is
+   refused. That is for whoever cannot see the page, and needs no ring. */
+main:focus,
+.notice:focus {
+  outline: none;
+  box-shadow: none;
+}
+
 /* Header: the operator's colour, and under it the edge of a platform. */
 
 .site-header {
@@ -309,21 +317,15 @@ a:hover {
   max-width: 46rem;
 }
 
+/* --share is the band's percentage, set on the element from the rules. */
 .scale__band {
   background: var(--white);
   border-top: 0.6rem solid var(--platform);
+  border-image: linear-gradient(90deg, var(--platform) var(--share, 100%), var(--rule) var(--share, 100%)) 1;
   padding: 0.9rem 1rem 1.1rem;
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
-}
-
-.scale__band:nth-child(1) {
-  border-image: linear-gradient(90deg, var(--platform) 25%, var(--rule) 25%) 1;
-}
-
-.scale__band:nth-child(2) {
-  border-image: linear-gradient(90deg, var(--platform) 50%, var(--rule) 50%) 1;
 }
 
 .scale__percent {
@@ -613,8 +615,15 @@ a:hover {
 
 /* Forms */
 
-.claim-form > section,
-.decision__form > * + * {
+.claim-form__fields {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.claim-form__fields > section + section,
+.claim-form > section {
   margin-top: 2.25rem;
 }
 

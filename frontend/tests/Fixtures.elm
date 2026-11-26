@@ -3,7 +3,7 @@ module Fixtures exposing
     , calculationA, calculationB
     , departures, fb14, fb16, fb17
     , idA, idB, idC
-    , period849, single349, taxi620
+    , period849, single349, taxi620, ore
     , rules
     , time
     )
@@ -16,7 +16,7 @@ descriptions of the same thing: the JSON file and this module.
 @docs calculationA, calculationB
 @docs departures, fb14, fb16, fb17
 @docs idA, idB, idC
-@docs period849, single349, taxi620
+@docs period849, single349, taxi620, ore
 @docs rules
 @docs time
 
@@ -33,7 +33,7 @@ import Date exposing (Date)
 import Departure exposing (Departure, Outcome(..))
 import Iso8601
 import Json.Decode as Decode
-import Money
+import Money exposing (Money)
 import Rules exposing (Rules)
 import Time exposing (Month(..), Posix)
 
@@ -93,17 +93,17 @@ fb17 =
 
 single349 : Ticket
 single349 =
-    Single (Money.fromOre 34900)
+    Single (ore 34900)
 
 
 period849 : Ticket
 period849 =
-    Period (Money.fromOre 84900) ThirtyDays
+    Period (ore 84900) ThirtyDays
 
 
 taxi620 : Expenses
 taxi620 =
-    { amount = Money.fromOre 62000, kind = Expenses.Taxi }
+    { amount = ore 62000, kind = Expenses.Taxi }
 
 
 
@@ -113,32 +113,32 @@ taxi620 =
 calculationA : Calculation
 calculationA =
     { ruleSetVersion = "v1"
-    , ticketValue = FullPrice (Money.fromOre 34900)
+    , ticketValue = FullPrice (ore 34900)
     , outcome = Ran 61
     , percent = 50
-    , ticketCompensation = Money.fromOre 17450
+    , ticketCompensation = ore 17450
     , expenses = NoneClaimed
-    , total = Money.fromOre 17450
+    , total = ore 17450
     }
 
 
 calculationB : Calculation
 calculationB =
     { ruleSetVersion = "v1"
-    , ticketValue = PerDay { price = Money.fromOre 84900, days = 30, value = Money.fromOre 2830 }
+    , ticketValue = PerDay { price = ore 84900, days = 30, value = ore 2830 }
     , outcome = Ran 130
     , percent = 100
-    , ticketCompensation = Money.fromOre 2830
-    , expenses = PendingReview { claimed = Money.fromOre 62000, maxCoverable = Money.fromOre 62000 }
-    , total = Money.fromOre 2830
+    , ticketCompensation = ore 2830
+    , expenses = PendingReview { claimed = ore 62000, maxCoverable = ore 62000 }
+    , total = ore 2830
     }
 
 
 calculationBApproved : Calculation
 calculationBApproved =
     { calculationB
-        | expenses = Covered { claimed = Money.fromOre 62000, approved = Money.fromOre 50000 }
-        , total = Money.fromOre 52830
+        | expenses = Covered { claimed = ore 62000, approved = ore 50000 }
+        , total = ore 52830
     }
 
 
@@ -152,10 +152,10 @@ rules =
         , { fromMinutes = 120, percent = 100 }
         ]
     , expenseMinDelayMinutes = 60
-    , expenseCap = Money.fromOre 80000
-    , autoApprovalLimit = Money.fromOre 100000
-    , maxTicketPrice = Money.fromOre 2000000
-    , maxClaimedExpenses = Money.fromOre 1000000
+    , expenseCap = ore 80000
+    , autoApprovalLimit = ore 100000
+    , maxTicketPrice = ore 2000000
+    , maxClaimedExpenses = ore 1000000
     }
 
 
@@ -255,7 +255,7 @@ approvedByOfficer =
                      , event =
                         History.ApprovedByOfficer
                             { officer = "KN"
-                            , approvedExpenses = Money.fromOre 50000
+                            , approvedExpenses = ore 50000
                             , note = "Kvitteringen viser 500 kr."
                             }
                      }
@@ -309,6 +309,18 @@ rejectedByRules =
 
 
 -- HELPERS
+
+
+{-| An amount for a test, from a number of øre. A negative number here is a mistake in the test itself.
+-}
+ore : Int -> Money
+ore amount =
+    case Money.fromOre amount of
+        Just money ->
+            money
+
+        Nothing ->
+            Debug.todo ("not an amount in a test: " ++ String.fromInt amount)
 
 
 idA : Id

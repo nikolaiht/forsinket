@@ -11,7 +11,6 @@ import Claim.Expenses exposing (Expenses)
 import Html exposing (Html, blockquote, dd, div, dl, dt, h2, p, section, text)
 import Html.Attributes exposing (class)
 import Money
-import Time
 import View.Calculation
 import View.Format as Format
 import View.History
@@ -19,11 +18,11 @@ import View.Status
 import View.Text as Text
 
 
-view : Time.Zone -> Claim -> Html msg
-view zone claim =
+view : Claim -> Html msg
+view claim =
     div [ class "claim" ]
         [ section [ class "claim__status" ]
-            (View.Status.badge (Claim.statusName claim.status) :: standing zone claim.status)
+            (View.Status.badge (Claim.statusName claim.status) :: standing claim.status)
         , div [ class "claim__columns" ]
             (let
                 journeySection : Html msg
@@ -37,7 +36,7 @@ view zone claim =
                 historySection =
                     section []
                         [ h2 [] [ text "Dette har skjedd" ]
-                        , View.History.view zone claim.history
+                        , View.History.view claim
                         ]
              in
              case calculationOf claim.status of
@@ -58,34 +57,23 @@ view zone claim =
 {-| Where the claim stands, in a sentence or two. Each branch has exactly the
 facts its status carries, so there is nothing here to guard against.
 -}
-standing : Time.Zone -> Status -> List (Html msg)
-standing zone status =
+standing : Status -> List (Html msg)
+standing status =
     case status of
         Received ->
             [ p [] [ text "Kravet er mottatt og blir vurdert." ] ]
 
         AwaitingReview { reasons } ->
-            let
-                ( first, rest ) =
-                    reasons
-            in
-            [ p []
-                [ text
-                    ("Kravet venter på en saksbehandler, fordi "
-                        ++ String.join " og " (List.map Text.reviewReason (first :: rest))
-                        ++ "."
-                    )
-                ]
-            ]
+            [ p [] [ text ("Kravet venter på en saksbehandler fordi " ++ Text.reviewReasons reasons ++ ".") ] ]
 
         Approved { calculation, by, decidedAt } ->
             p []
                 [ text
                     ("Innvilget "
-                        ++ Format.dateTime zone decidedAt
-                        ++ ". "
+                        ++ Format.dateTime decidedAt
+                        ++ ". Du får "
                         ++ Money.format calculation.total
-                        ++ " blir utbetalt til betalingsmåten billetten ble kjøpt med."
+                        ++ " tilbake på betalingsmåten du brukte da du kjøpte billetten."
                     )
                 ]
                 :: decidedBy by
@@ -93,13 +81,13 @@ standing zone status =
         Rejected { rejection, decidedAt } ->
             case rejection of
                 RejectedByRules reason ->
-                    [ p [] [ text ("Avslått " ++ Format.dateTime zone decidedAt ++ ". " ++ Text.ineligibility reason) ] ]
+                    [ p [] [ text ("Avslått " ++ Format.dateTime decidedAt ++ ". " ++ Text.ineligibility reason) ] ]
 
                 RejectedByOfficer { reason, officer, note } ->
                     [ p []
                         [ text
                             ("Avslått "
-                                ++ Format.dateTime zone decidedAt
+                                ++ Format.dateTime decidedAt
                                 ++ " av saksbehandler "
                                 ++ officer
                                 ++ ". "
@@ -111,7 +99,7 @@ standing zone status =
                     ]
 
         PaidOut { calculation, by, paidAt } ->
-            p [] [ text (Money.format calculation.total ++ " ble utbetalt " ++ Format.dateTime zone paidAt ++ ".") ]
+            p [] [ text (Money.format calculation.total ++ " ble utbetalt " ++ Format.dateTime paidAt ++ ".") ]
                 :: decidedBy by
 
 

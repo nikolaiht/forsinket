@@ -4,6 +4,7 @@ import Claim.Decision as Decision exposing (Choice(..), Decision, Draft, Verdict
 import Claim.Reason exposing (RejectionReason(..))
 import Expect
 import FieldError exposing (Field(..), FieldError, Problem(..))
+import Fixtures
 import Money exposing (Money)
 import Test exposing (Test, describe, test)
 
@@ -19,7 +20,7 @@ suite =
                             (Ok
                                 { officer = "KN"
                                 , note = "Kvitteringen viser 500 kr."
-                                , verdict = Approve (Money.fromOre 50000)
+                                , verdict = Approve (Fixtures.ore 50000)
                                 }
                             )
             , test "nothing at all may be covered" <|
@@ -31,7 +32,7 @@ suite =
                 \_ ->
                     validateWithExpenses { approval | approvedExpenses = "620" }
                         |> Result.map .verdict
-                        |> Expect.equal (Ok (Approve (Money.fromOre 62000)))
+                        |> Expect.equal (Ok (Approve (Fixtures.ore 62000)))
             , test "but not one øre more" <|
                 \_ ->
                     validateWithExpenses { approval | approvedExpenses = "620,01" }
@@ -113,7 +114,7 @@ suite =
 
 maxCoverable : Money
 maxCoverable =
-    Money.fromOre 62000
+    Fixtures.ore 62000
 
 
 validateWithExpenses : Draft -> Result (List FieldError) Decision

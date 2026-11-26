@@ -1,4 +1,4 @@
-module Validation exposing (amount, andMap)
+module Validation exposing (Minimum(..), amount, andMap)
 
 {-| Checking a form so that every problem is found, not just the first.
 
@@ -37,28 +37,45 @@ andMap next soFar =
             Err (errors ++ more)
 
 
-{-| Read an amount from a text field, between a lower and an upper limit.
+{-| The least an amount field accepts. A `Money` is never below zero, so these
+are the only two lower limits there are.
 -}
-amount : Field -> { atLeast : Money, atMost : Money } -> String -> Result (List FieldError) Money
+type Minimum
+    = MoreThanZero
+    | ZeroOrMore
+
+
+{-| Read an amount from a text field, and check it against the field's limits.
+-}
+amount : Field -> { atLeast : Minimum, atMost : Money } -> String -> Result (List FieldError) Money
 amount field limits text =
     let
         problem : Problem -> Result (List FieldError) Money
         problem what =
             Err [ { field = field, problem = what } ]
     in
-    case Money.parse text of
-        Err Money.Empty ->
+    case ( Money.parse text, limits.atLeast ) of
+        ( Err Money.Empty, _ ) ->
             problem Required
 
-        Err Money.NotAnAmount ->
+        ( Err Money.NotAnAmount, _ ) ->
             problem NotAnAmount
 
-        Ok money ->
-            if Money.toOre money < Money.toOre limits.atLeast then
+        ( Ok money, MoreThanZero ) ->
+            if money == Money.zero then
                 problem MustBePositive
 
-            else if Money.toOre money > Money.toOre limits.atMost then
-                problem AboveMaximum
-
             else
-                Ok money
+                atMost limits.atMost field money
+
+        ( Ok money, ZeroOrMore ) ->
+            atMost limits.atMost field money
+
+
+atMost : Money -> Field -> Money -> Result (List FieldError) Money
+atMost limit field money =
+    if Money.toOre money > Money.toOre limit then
+        Err [ { field = field, problem = AboveMaximum } ]
+
+    else
+        Ok money

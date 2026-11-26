@@ -1,4 +1,4 @@
-module View.Text exposing (expenseKind, ineligibility, rejectionReason, reviewReason, status, ticket)
+module View.Text exposing (expenseKind, ineligibility, rejectionReason, reviewReasons, status, ticket)
 
 {-| The Norwegian words for the things the service names in English.
 
@@ -33,14 +33,24 @@ status name =
             "Utbetalt"
 
 
+{-| Worded so that it reads right both for a claim that has been rejected and
+for one that has not been sent yet.
+-}
 ineligibility : IneligibilityReason -> String
 ineligibility reason =
     case reason of
         SubmittedTooLate ->
-            "Kravet kom etter fristen."
+            "Fristen for å melde krav for denne reisen er ute."
 
         DelayBelowThreshold ->
-            "Forsinkelsen var for kort til å gi erstatning."
+            "Forsinkelsen er for kort til å gi erstatning."
+
+
+{-| `utlegget må vurderes mot kvitteringen og beløpet er over grensen …`
+-}
+reviewReasons : ( ReviewReason, List ReviewReason ) -> String
+reviewReasons ( first, rest ) =
+    String.join " og " (List.map reviewReason (first :: rest))
 
 
 reviewReason : ReviewReason -> String

@@ -1,4 +1,4 @@
-module View.Layout exposing (Section(..), document, loading)
+module View.Layout exposing (Section(..), document, loading, mainId)
 
 {-| What every page has around it: the header, the main area and the footer
 that says what this is.
@@ -6,24 +6,32 @@ that says what this is.
 
 import Browser
 import Html exposing (Html, a, div, footer, header, main_, nav, p, span, text)
-import Html.Attributes exposing (attribute, class, href, id)
+import Html.Attributes exposing (attribute, class, href, id, tabindex)
 import Route
 import Status
 
 
-{-| Which part of the app a page belongs to, for marking the menu.
+{-| Which menu entry a page is, if it is one of them.
 -}
 type Section
-    = Front
-    | Passenger
-    | Officer
+    = NewClaimPage
+    | OfficerPages
+    | NoSection
+
+
+{-| The id of the main area. `Main` moves focus here when the page changes,
+and it is where the link that skips the menu leads.
+-}
+mainId : String
+mainId =
+    "innhold"
 
 
 document : Section -> { title : String, body : List (Html msg) } -> Browser.Document msg
 document section page =
     { title = page.title ++ " – Fjordbanen reisegaranti"
     , body =
-        [ a [ class "skip-link", href "#innhold" ] [ text "Hopp til innholdet" ]
+        [ a [ class "skip-link", href ("#" ++ mainId) ] [ text "Hopp til innholdet" ]
         , header [ class "site-header" ]
             [ div [ class "site-header__inner" ]
                 [ a [ class "wordmark", Route.href Route.Home ]
@@ -31,12 +39,12 @@ document section page =
                     , span [ class "wordmark__service" ] [ text "Reisegaranti" ]
                     ]
                 , nav [ attribute "aria-label" "Hovedmeny" ]
-                    [ menuLink (section == Passenger) Route.NewClaim "Meld krav"
-                    , menuLink (section == Officer) (Route.ReviewQueue (Route.Only awaitingReview)) "Saksbehandling"
+                    [ menuLink (section == NewClaimPage) Route.NewClaim "Meld krav"
+                    , menuLink (section == OfficerPages) (Route.ReviewQueue (Route.Only awaitingReview)) "Saksbehandling"
                     ]
                 ]
             ]
-        , main_ [ id "innhold", class "page" ] page.body
+        , main_ [ id mainId, tabindex -1, class "page" ] page.body
         , footer [ class "site-footer" ]
             [ p []
                 [ text "Dette er en demo. Fjordbanen finnes ikke, reglene er laget for demoen, og alle data er syntetiske. På den åpne demoen nullstilles dataene jevnlig." ]
@@ -55,7 +63,7 @@ menuLink isCurrent route label =
     a
         (Route.href route
             :: (if isCurrent then
-                    [ attribute "aria-current" "true" ]
+                    [ attribute "aria-current" "page" ]
 
                 else
                     []

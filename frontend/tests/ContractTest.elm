@@ -21,7 +21,6 @@ import Fixtures
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import JsonTree
-import Money
 import Rules
 import Status
 import Test exposing (Test, describe, test)
@@ -73,7 +72,7 @@ suite =
                   , submittedAt = Fixtures.time "2026-11-21T10:00:00Z"
                   , departureDate = Date.fromCalendarDate 2026 Nov 20
                   , trainNumber = "FB14"
-                  , total = Just (Money.fromOre 2830)
+                  , total = Just (Fixtures.ore 2830)
                   }
                 , { id = Fixtures.idA
                   , version = 2
@@ -81,7 +80,7 @@ suite =
                   , submittedAt = Fixtures.time "2026-11-21T09:15:00Z"
                   , departureDate = Date.fromCalendarDate 2026 Nov 20
                   , trainNumber = "FB16"
-                  , total = Just (Money.fromOre 17450)
+                  , total = Just (Fixtures.ore 17450)
                   }
                 ]
             , decodes "the worked examples for the front page"
@@ -103,12 +102,12 @@ suite =
                   , assessment =
                         Eligible
                             { ruleSetVersion = "v1"
-                            , ticketValue = PerDay { price = Money.fromOre 84900, days = 30, value = Money.fromOre 2830 }
+                            , ticketValue = PerDay { price = Fixtures.ore 84900, days = 30, value = Fixtures.ore 2830 }
                             , outcome = Cancelled
                             , percent = 100
-                            , ticketCompensation = Money.fromOre 2830
-                            , expenses = PendingReview { claimed = Money.fromOre 62000, maxCoverable = Money.fromOre 62000 }
-                            , total = Money.fromOre 2830
+                            , ticketCompensation = Fixtures.ore 2830
+                            , expenses = PendingReview { claimed = Fixtures.ore 62000, maxCoverable = Fixtures.ore 62000 }
+                            , total = Fixtures.ore 2830
                             }
                             (ManualReview ( ExpensesClaimed, [] ))
                   }
@@ -130,7 +129,7 @@ suite =
                 (Decision.encode 2
                     { officer = "KN"
                     , note = "Kvitteringen viser 500 kr."
-                    , verdict = Decision.Approve (Money.fromOre 50000)
+                    , verdict = Decision.Approve (Fixtures.ore 50000)
                     }
                 )
                 Examples.decisionRequestApprove
@@ -174,12 +173,12 @@ suite =
 singleTicketAt : Int -> Int -> Int -> Calculation.Calculation
 singleTicketAt delayMinutes percent compensation =
     { ruleSetVersion = "v1"
-    , ticketValue = FullPrice (Money.fromOre 34900)
+    , ticketValue = FullPrice (Fixtures.ore 34900)
     , outcome = Ran delayMinutes
     , percent = percent
-    , ticketCompensation = Money.fromOre compensation
+    , ticketCompensation = Fixtures.ore compensation
     , expenses = NoneClaimed
-    , total = Money.fromOre compensation
+    , total = Fixtures.ore compensation
     }
 
 

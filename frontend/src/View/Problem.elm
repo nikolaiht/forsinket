@@ -1,35 +1,46 @@
-module View.Problem exposing (field, formErrors, view)
+module View.Problem exposing (field, formErrors, formErrorsId, view)
 
 {-| What went wrong, said so that the person reading can do something about
 it. Every `Api.Error` and every `FieldError.Problem` has its own words here.
 -}
 
 import Api
-import FieldError exposing (FieldError, Problem(..))
+import Claim.Decision as Decision
+import FieldError exposing (Field(..), FieldError, Problem(..))
 import Html exposing (Html, button, details, div, li, p, summary, text, ul)
-import Html.Attributes exposing (attribute, class, type_)
+import Html.Attributes exposing (attribute, class, id, tabindex, type_)
 import Html.Events exposing (onClick)
 
 
-{-| What is wrong with a field. `limit` is the highest amount the field takes,
-already written out, for the fields that have one.
+{-| What is wrong with a field. Most problems read the same wherever they are,
+but a few are clearer when they name the field. `limit` is the highest amount
+the field takes, already written out, for the fields that have one.
 -}
-field : { limit : Maybe String } -> Problem -> String
-field { limit } problem =
-    case problem of
-        Required ->
+field : { limit : Maybe String } -> Field -> Problem -> String
+field { limit } where_ problem =
+    case ( where_, problem ) of
+        ( DepartureField, Required ) ->
+            "Velg en avgang."
+
+        ( OfficerField, InvalidFormat ) ->
+            "Bruk 2 til 10 bokstaver."
+
+        ( NoteField, Required ) ->
+            "Skriv en begrunnelse for avslaget."
+
+        ( _, Required ) ->
             "Dette må fylles ut."
 
-        NotAnAmount ->
+        ( _, NotAnAmount ) ->
             "Skriv et beløp, for eksempel 349 eller 349,50."
 
-        MustBePositive ->
+        ( _, MustBePositive ) ->
             "Beløpet må være større enn null."
 
-        MustNotBeNegative ->
+        ( _, MustNotBeNegative ) ->
             "Beløpet kan ikke være negativt."
 
-        AboveMaximum ->
+        ( _, AboveMaximum ) ->
             case limit of
                 Just highest ->
                     "Beløpet kan ikke være høyere enn " ++ highest ++ "."
@@ -37,25 +48,25 @@ field { limit } problem =
                 Nothing ->
                     "Beløpet er for høyt."
 
-        UnknownDeparture ->
+        ( _, UnknownDeparture ) ->
             "Avgangen finnes ikke. Velg en avgang fra listen."
 
-        DepartureInFuture ->
+        ( _, DepartureInFuture ) ->
             "Avgangen har ikke gått ennå."
 
-        UnsupportedValidity ->
+        ( _, UnsupportedValidity ) ->
             "Periodebilletten må gjelde i 7 eller 30 dager."
 
-        UnknownValue ->
+        ( _, UnknownValue ) ->
             "Verdien ble ikke godtatt. Velg på nytt."
 
-        TooLong ->
-            "Teksten er for lang. Bruk høyst 500 tegn."
+        ( _, TooLong ) ->
+            "Teksten er for lang. Bruk høyst " ++ String.fromInt Decision.maxNoteLength ++ " tegn."
 
-        InvalidFormat ->
-            "Bruk 2 til 10 bokstaver."
+        ( _, InvalidFormat ) ->
+            "Verdien er skrevet på en måte som ikke godtas."
 
-        OtherProblem code ->
+        ( _, OtherProblem code ) ->
             "Verdien ble ikke godtatt (" ++ code ++ ")."
 
 
@@ -72,7 +83,7 @@ apiError error =
             "Fant ikke kravet. Sjekk at adressen er riktig."
 
         Api.Invalid _ ->
-            "Noen av feltene ble ikke godtatt. Se meldingene ved feltene."
+            "Tjenesten godtok ikke det som ble sendt."
 
         Api.VersionConflict ->
             "Saken er endret av noen andre siden du åpnet den. Last den inn på nytt før du gjør noe mer."
@@ -111,9 +122,17 @@ view { retry } error =
         ]
 
 
+{-| The id of the notice `formErrors` renders, for moving focus to it.
+-}
+formErrorsId : String
+formErrorsId =
+    "skjemafeil"
+
+
 {-| The notice above a form's button when the form was not accepted. It says
 so, and lists the errors that have no field to be shown next to: the ones on
-fields the service knows and this app does not.
+fields the service knows and this app does not. It can take focus, so that
+someone who cannot see the page is taken to it.
 -}
 formErrors : String -> List FieldError -> Html msg
 formErrors message errors =
@@ -121,7 +140,7 @@ formErrors message errors =
         text ""
 
     else
-        div [ class "notice notice--error", attribute "role" "alert" ]
+        div [ id formErrorsId, tabindex -1, class "notice notice--error", attribute "role" "alert" ]
             [ p [] [ text message ]
             , case FieldError.unplaced errors of
                 [] ->
@@ -130,7 +149,9 @@ formErrors message errors =
                 unplaced ->
                     ul []
                         (List.map
-                            (\( path, problem ) -> li [] [ text ("«" ++ path ++ "»: " ++ field { limit = Nothing } problem) ])
+                            (\( path, problem ) ->
+                                li [] [ text ("«" ++ path ++ "»: " ++ field { limit = Nothing } (OtherField path) problem) ]
+                            )
                             unplaced
                         )
             ]
