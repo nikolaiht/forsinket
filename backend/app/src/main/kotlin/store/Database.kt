@@ -14,10 +14,11 @@ fun dataSource(url: String, user: String, password: String): HikariDataSource =
             username = user
             this.password = password
             maximumPoolSize = 5
-            // One connection is opened at the start, and more when they are
-            // needed. A host may start several instances of the service for
-            // one burst of visitors, and each of them is here only briefly.
-            minimumIdle = 1
+            // No connection is kept open for its own sake. One is opened when
+            // a request needs it, and closed when it has been idle for ten
+            // minutes. A database that goes to sleep when nobody uses it is
+            // then allowed to, instead of being kept awake by an idle pool.
+            minimumIdle = 0
         },
     )
 

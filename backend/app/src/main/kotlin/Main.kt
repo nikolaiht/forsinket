@@ -58,9 +58,8 @@ fun main() {
     }
 
     embeddedServer(Netty, port = config.port) {
-        // On a host that starts the service for the first visitor after a quiet
-        // spell, this is the time that visitor waits, so it is worth knowing
-        // where it goes.
+        // This is how long a restart keeps a visitor waiting, so it is worth
+        // knowing where the time goes.
         log.info(
             "Before serving: connecting to the database took $connecting, migrating $migrating, " +
                 "the demo $preparingDemo. The JVM has been up for ${ManagementFactory.getRuntimeMXBean().uptime} ms.",

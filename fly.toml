@@ -1,0 +1,32 @@
+# The hosted copy: one small machine at Fly.io that is always on, running the
+# same image as docker compose and CI. The database address is a secret
+# (DATABASE_URL), set with `fly secrets`.
+app = "forsinket"
+primary_region = "fra"
+
+[build]
+dockerfile = "Dockerfile"
+
+[env]
+DEMO_MODE = "true"
+DEMO_MAX_CLAIMS = "200"
+DEMO_RESET_MINUTES = "1440"
+
+[http_service]
+internal_port = 8080
+force_https = true
+# A JVM takes seconds to start, and the first visitor after a quiet spell
+# should not be the one to wait for it. The machine is never stopped.
+auto_stop_machines = "off"
+auto_start_machines = false
+
+[[http_service.checks]]
+grace_period = "15s"
+interval = "30s"
+method = "GET"
+timeout = "5s"
+path = "/health"
+
+[[vm]]
+size = "shared-cpu-1x"
+memory = "512mb"

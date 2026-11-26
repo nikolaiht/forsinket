@@ -2,7 +2,7 @@
 
 A demo: passengers claim compensation for a delayed or cancelled train, and the app shows how the amount was worked out. The train operator is made up. The frontend is written in Elm and the backend in Kotlin.
 
-**Try it: [forsinket.vercel.app](https://forsinket.vercel.app)**
+**Try it: [forsinket.fly.dev](https://forsinket.fly.dev)**
 
 [![ci](https://github.com/nikolaiht/forsinket/actions/workflows/ci.yml/badge.svg)](https://github.com/nikolaiht/forsinket/actions/workflows/ci.yml)
 
@@ -24,7 +24,7 @@ The operator, Tindbanen, is made up. The rules are made up for the demo and are 
 docker compose up --build
 ```
 
-That is all it needs: Docker. The app is then on [http://localhost:8080](http://localhost:8080), with six demo claims in it. There are three places to start, here and on [the hosted copy](https://forsinket.vercel.app):
+That is all it needs: Docker. The app is then on [http://localhost:8080](http://localhost:8080), with six demo claims in it. There are three places to start, here and on [the hosted copy](https://forsinket.fly.dev):
 
 - **[The front page](http://localhost:8080/)** says what a passenger is owed, with four worked examples.
 - **[Meld krav](http://localhost:8080/krav/nytt)** is the claim form. Pick a departure and a ticket, and the calculation appears before the claim is submitted.
@@ -32,9 +32,9 @@ That is all it needs: Docker. The app is then on [http://localhost:8080](http://
 
 ## The hosted copy
 
-[forsinket.vercel.app](https://forsinket.vercel.app) is built from this repository on every push to `main`. The Elm app is served as static files from Vercel's CDN, and `/api` goes to the same Docker image as above, run as a container. The database is PostgreSQL 18 at Neon. Both are in Frankfurt.
+[forsinket.fly.dev](https://forsinket.fly.dev) is the same Docker image, on one small machine at Fly.io that is always on ([`fly.toml`](fly.toml)). The database is PostgreSQL 18 at Neon. Both are in Frankfurt.
 
-The service and the database stop when nobody has visited for five minutes. The page still appears at once and says that it is fetching. The first numbers after such a pause take about six seconds, while the service starts again, and after that a request takes about 0.2 seconds. The demo starts over from its six claims once a day. The measurements and the reasons are in the [RFC](docs/rfc/0001-delay-compensation-claims.md#where-the-hosted-copy-runs).
+A page or a request takes about 0.2 seconds. The database goes to sleep when nobody has used it for a while, so the first page that reads claims after a quiet spell takes about 0.8 seconds. The demo starts over from its six claims once a day. The measurements, and what was tried first, are in the [RFC](docs/rfc/0001-delay-compensation-claims.md#where-the-hosted-copy-runs).
 
 ## What it does
 

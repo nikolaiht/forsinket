@@ -170,33 +170,39 @@ The app is built to stand open on the internet without a login:
 - Every input has a limit: ticket price, claimed expenses, the length of an officer's note, and 64 KB for a request body.
 - Elm renders text as text. Nothing a user types is treated as HTML.
 - With `DEMO_MODE=true` the service seeds six claims through the normal `submit` and `decide` path, caps the number of stored claims, and can start over from the seed data at an interval. A reset that fails is logged, and the next one is still tried.
-- The time of the last reset is stored in the database, and a service that starts checks whether one is due. A timer inside the service is not enough: a host that stops the service between visits stops the timer too. A host may also start several instances of the service for one burst of visitors. The store takes a lock while it decides whether to empty itself, so only one of them does. Seeding leaves a claim that is already there as it is, so two instances that seed at the same moment do not get in each other's way, and a seeding that was cut short is finished the next time the service starts.
+- The time of the last reset is stored in the database, and a service that starts checks whether one is due. A timer inside the service is not enough on its own: it starts from nothing every time the service is restarted, and on a host that stops the service between visits it never fires at all.
+- More than one instance of the service can start at the same moment. The store takes a lock while it decides whether to empty itself, so only one of them does. Seeding leaves a claim that is already there as it is, so two instances that seed at the same moment do not get in each other's way, and a seeding that was cut short is finished the next time the service starts.
 - No personal data is asked for. A claim has no name, e-mail or account number. The only free text stored is an officer's initials and note.
 
 ### Where the hosted copy runs
 
-The hosted copy is on Vercel, with the database at Neon, both in Frankfurt. Vercel builds the repository on every push to `main`, as two services (`vercel.json`):
+The hosted copy is one small machine at Fly.io that is always on (`fly.toml`). It runs the image that `docker compose` and CI run, unchanged, so it serves both the Elm app and the API. The database is PostgreSQL 18 at Neon. Both are in Frankfurt. A new version goes out with `fly deploy`.
 
-- **The Elm app** is built with the same `npm run build` as everywhere else and served as static files from the CDN. An address that is not a file gets `index.html`, because the app does its own routing.
-- **`/api` and `/health`** go to the Docker image, run as a container. It is the image `docker compose` and CI run, unchanged. It still has the web app in it, which nobody asks it for here.
-
-Both the container and the database stop when there has been no traffic for five minutes, and start again for the next visitor. A demo that is seldom visited then costs nothing to keep and needs nobody to look after it. The price is the wait for that next visitor, measured on 26 November 2026 after eight minutes without traffic:
+Measured on 26 November 2026:
 
 | What | Time |
 |---|---|
-| The page and its script, from the CDN | 0.2 s each |
-| The first request to `/api` | 6.0 s |
+| The page, or its script | 0.2 s |
+| A request that does not need the database | 0.15 s |
+| The first request that reads claims after 16 minutes without one | 0.8 s |
+| Requests that read claims after that | 0.2 s |
+
+The machine uses about 200 MB of its 512 MB.
+
+The database goes to sleep when it has not been used for five minutes, and wakes for the next query. That is the 0.8 seconds. The connection pool keeps no connection open for its own sake, because an idle pool that checks its connections every other minute would keep the database awake day and night. Only pages that read or write claims wait for it: the rules, the examples, the departures and the preview are all computed, so the front page and the claim form up to the point of sending do not touch the database.
+
+**What was tried first.** The first hosted copy ran on a platform that stops a service when it has had no traffic for five minutes, and starts it again for the next visitor (Vercel's container runtime, in beta at the time). A demo that is seldom visited then costs nothing to keep. The price is the wait for that next visitor, measured after eight minutes without traffic:
+
+| What | Time |
+|---|---|
+| The first request to the service | 6.0 s |
 | Requests after that | 0.2 s |
 
-The service logs where its own part of the six seconds goes. About 1.9 s pass before the JVM starts at all. Opening the first database connection, which also wakes the database, takes 1.4 s, the migration check 0.6 s, getting the demo ready 0.4 s, and starting Ktor 0.8 s. The rest is the JVM itself.
+The service logs where its own part of that goes. About 1.9 s passed before the JVM started at all. Opening the first database connection took 1.4 s, the migration check 0.6 s, getting the demo ready 0.4 s, and starting Ktor 0.8 s. The rest was the JVM itself.
 
-That is why the page is not served by the service here. When it was, the visitor looked at an empty window for those six seconds. Now the page is there at once and says that it is fetching, which is what the `Loading` state in the Elm model is for.
+Serving the Elm app as static files from the platform's CDN made the page appear at once, and it said that it was fetching, which is what the `Loading` state in the Elm model is for. The numbers still took six seconds. A JVM service is built to be left running. On a platform built around stopping it, the choice was between that wait and a scheduled request every few minutes to keep it awake. A machine that is always on needs neither, for a few dollars a month.
 
-Two things in the code exist because of this way of running. The time of the last reset is stored, as described above, because the timer never gets to fire. And a database address is read in the form a host hands out: one `postgresql://` address with the user and the password in it. Where a host gives a direct address beside one that goes through its connection pooler, the direct one is used, since the service keeps its own small pool.
-
-Alternative considered: a small machine that is always on. There is no wait then, and the timer works as it is. It also runs day and night for a page that is opened a few times a week. The same image would run there unchanged.
-
-Vercel's container runtime and its services were both in beta when this was written.
+Three things in the code came out of that attempt and are kept, because they make the service safe to restart at any time and to run as more than one instance. The time of the last reset is stored. Seeding can be repeated. And a database address is read in the form a host hands out: one `postgresql://` address with the user and the password in it. Where a host gives a direct address beside one that goes through its connection pooler, the direct one is used, since the service keeps its own small pool.
 
 ## Testing
 
@@ -212,7 +218,8 @@ Vercel's container runtime and its services were both in beta when this was writ
 - **Submitting a claim is not idempotent.** The form locks while a claim is on its way, but a request that is sent again by something in between, after the first one was stored, makes a second claim. A real service would take an idempotency key.
 - **The demo's cap on stored claims is soft.** Two submissions at the same moment can both get in under it.
 - **The preview is asked for on every change that leaves the form complete.** There is no debounce. Late answers are dropped, so the result is right, but a slow connection sends more requests than it needs.
-- **The first visitor after a pause waits about six seconds for the numbers** on the hosted copy, as measured above. The start-up could be made shorter. It cannot be made to go away while the service is stopped between visits.
+- **The first request that reads claims after a quiet spell waits for the database to wake**, 0.8 seconds as measured above. Keeping the database awake costs more than the machine does.
+- **A new version reaches the hosted copy when someone runs `fly deploy`**, not when it is pushed.
 - **A ticket under 45 øre can give a compensation of zero**, which is then approved. No real ticket is that cheap, so there is no minimum payout rule yet.
 
 ## Open questions
