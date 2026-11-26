@@ -1,38 +1,36 @@
 package io.github.nikolaiht.forsinket.app
 
+import arrow.core.getOrElse
+import io.github.nikolaiht.forsinket.app.demo.resetRepeatedly
 import io.github.nikolaiht.forsinket.app.demo.seedDemoData
+import io.github.nikolaiht.forsinket.app.demo.seedIfEmpty
 import io.github.nikolaiht.forsinket.app.http.module
-import io.github.nikolaiht.forsinket.app.store.ClaimStore
 import io.github.nikolaiht.forsinket.app.store.PostgresClaimStore
 import io.github.nikolaiht.forsinket.app.store.dataSource
 import io.github.nikolaiht.forsinket.app.store.migrate
 import io.github.nikolaiht.forsinket.app.traffic.SyntheticTrafficData
 import io.github.nikolaiht.forsinket.domain.ClaimId
 import io.github.nikolaiht.forsinket.domain.RulesV1
+import io.ktor.server.application.log
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.time.Clock
 import java.util.UUID
 import kotlin.system.exitProcess
-import kotlin.time.Duration
 
 /**
  * Where everything is put together. This is the only place that knows which
  * clock, which database and which traffic data the service runs on.
  */
 fun main() {
-    val config = configFrom(System.getenv()).fold(
-        ifLeft = { problems ->
-            problems.forEach { System.err.println("Configuration: $it") }
-            exitProcess(1)
-        },
-        ifRight = { it },
-    )
+    val config = configFrom(System.getenv()).getOrElse { problems ->
+        problems.forEach { System.err.println("Configuration: $it") }
+        exitProcess(1)
+    }
 
     val dataSource = dataSource(config.database.url, config.database.user, config.database.password)
     migrate(dataSource)
@@ -51,23 +49,24 @@ fun main() {
     )
 
     if (config.demo != null) {
-        runBlocking { seedDemoData(store, traffic, rules, clock.instant()) }
+        runBlocking { seedIfEmpty(store, traffic, rules, clock.instant()) }
     }
 
     embeddedServer(Netty, port = config.port) {
-        module(service, traffic, rules, clock, config.webRoot)
+        module(service, config.webRoot)
 
         config.demo?.resetEvery?.let { interval ->
-            launch { resetEvery(interval, store) { seedDemoData(store, traffic, rules, clock.instant()) } }
+            launch {
+                resetRepeatedly(
+                    interval,
+                    onFailure = { log.error("Resetting the demo failed. It will be tried again.", it) },
+                ) {
+                    // After a reset the seed claims go in whatever else has
+                    // arrived in the meantime.
+                    withContext(Dispatchers.IO) { store.reset() }
+                    seedDemoData(store, traffic, rules, clock.instant())
+                }
+            }
         }
     }.start(wait = true)
-}
-
-/** Puts the open demo back to its seed data at a fixed interval, for as long as the server runs. */
-private suspend fun resetEvery(interval: Duration, store: ClaimStore, seed: suspend () -> Unit) {
-    while (true) {
-        delay(interval)
-        withContext(Dispatchers.IO) { store.reset() }
-        seed()
-    }
 }

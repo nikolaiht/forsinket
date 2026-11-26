@@ -89,6 +89,6 @@ object ContractFixtures {
                 .fold({ error("$command was rejected in a fixture: $it") }, { it })
             produced.fold(state, ::evolve) to events + produced
         }
-        return ClaimSnapshot(id, version = events.size, state = state as ClaimState.Filed, events = events)
+        return checkNotNull(snapshotOf(id, events))
     }
 }

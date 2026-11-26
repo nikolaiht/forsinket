@@ -5,6 +5,7 @@ import io.github.nikolaiht.forsinket.domain.ReviewReason.ABOVE_AUTO_APPROVAL_LIM
 import io.github.nikolaiht.forsinket.domain.ReviewReason.EXPENSES_CLAIMED
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import java.time.LocalDate
 
 class AssessTest : FunSpec({
     val single349 = Ticket.Single(Money.ofKroner(349))
@@ -151,7 +152,7 @@ class AssessTest : FunSpec({
     }
 
     context("the 90 day deadline") {
-        fun assessOn(submittedOn: java.time.LocalDate, delayMinutes: Int = 61) =
+        fun assessOn(submittedOn: LocalDate, delayMinutes: Int = 61) =
             assess(RulesV1, ClaimDetails(departure(delayMinutes), single349, null), submittedOn)
 
         test("day 90 is in time") {

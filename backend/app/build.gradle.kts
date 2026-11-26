@@ -26,6 +26,7 @@ dependencies {
     implementation(libs.ktor.server.netty)
     implementation(libs.ktor.server.content.negotiation)
     implementation(libs.ktor.server.status.pages)
+    implementation(libs.ktor.server.body.limit)
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.hikari)
     implementation(libs.flyway.core)
@@ -39,6 +40,7 @@ dependencies {
     testImplementation(libs.kotest.property)
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.ktor.server.test.host)
+    testImplementation(libs.coroutines.test)
 }
 
 // The JSON examples both this service and the Elm app are tested against.

@@ -41,7 +41,7 @@ fun configFrom(env: Map<String, String>): EitherNel<String, Config> =
             { required(env, "DATABASE_PASSWORD") },
             { withNel { demo(env) } },
         ) { port, url, user, password, demo ->
-            Config(port, DatabaseConfig(url, user, password), env["WEB_ROOT"]?.let(Path::of), demo)
+            Config(port, DatabaseConfig(url, user, password), env["WEB_ROOT"]?.takeIf { it.isNotBlank() }?.let(Path::of), demo)
         }
     }
 

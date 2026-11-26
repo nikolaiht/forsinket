@@ -6,6 +6,7 @@ import io.github.nikolaiht.forsinket.domain.ClaimId
 import io.github.nikolaiht.forsinket.domain.ClaimState
 import io.github.nikolaiht.forsinket.domain.Money
 import io.github.nikolaiht.forsinket.domain.StatusName
+import io.github.nikolaiht.forsinket.domain.replay
 import java.time.Instant
 import java.time.LocalDate
 
@@ -20,6 +21,13 @@ data class ClaimSnapshot(
     val state: ClaimState.Filed,
     val events: List<ClaimEvent>,
 )
+
+/** The claim a list of events adds up to, or null when there are no events and so no claim. */
+fun snapshotOf(id: ClaimId, events: List<ClaimEvent>): ClaimSnapshot? =
+    when (val state = replay(events)) {
+        ClaimState.NotSubmitted -> null
+        is ClaimState.Filed -> ClaimSnapshot(id, version = events.size, state = state, events = events)
+    }
 
 /** One row in the list of claims. A projection of the events, kept for querying. */
 data class ClaimSummary(

@@ -4,6 +4,7 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import org.flywaydb.core.Flyway
 import java.sql.Connection
+import java.sql.SQLException
 import javax.sql.DataSource
 
 fun dataSource(url: String, user: String, password: String): HikariDataSource =
@@ -28,7 +29,12 @@ inline fun <T> DataSource.transaction(block: (Connection) -> T): T =
         try {
             block(connection).also { connection.commit() }
         } catch (e: Exception) {
-            connection.rollback()
+            try {
+                connection.rollback()
+            } catch (rollbackFailure: SQLException) {
+                // The first failure is the one to report. This one goes along with it.
+                e.addSuppressed(rollbackFailure)
+            }
             throw e
         }
     }

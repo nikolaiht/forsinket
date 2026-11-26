@@ -1,0 +1,28 @@
+{
+  "type": "sent_to_review",
+  "calculation": {
+    "ruleSetVersion": "v1",
+    "ticketValue": {
+      "type": "per_day",
+      "price": 84900,
+      "days": 30,
+      "value": 2830
+    },
+    "outcome": {
+      "type": "cancelled"
+    },
+    "percent": 100,
+    "ticketCompensation": 2830,
+    "expenses": {
+      "type": "pending_review",
+      "claimed": 62000,
+      "maxCoverable": 62000
+    },
+    "total": 2830
+  },
+  "reasons": [
+    "expenses_claimed",
+    "above_auto_approval_limit"
+  ],
+  "at": "2026-11-21T10:00:00Z"
+}

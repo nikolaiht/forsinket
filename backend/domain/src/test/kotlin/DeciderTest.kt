@@ -146,7 +146,7 @@ class DeciderTest : FunSpec({
         }
 
         test("the officer may cover everything that was claimed, up to the cap") {
-            decide(awaitingReview, approve(62000)).isRight() shouldBe true
+            decide(awaitingReview, approve(62000)).shouldBeRight()
         }
 
         test("the officer cannot cover more than the rules allow") {
@@ -159,7 +159,7 @@ class DeciderTest : FunSpec({
             val overTheLimit = ClaimState.NotSubmitted.after(Submit(expensive, submittedAt))
 
             decide(overTheLimit, approve(1)) shouldBe ClaimError.ApprovedExpensesAboveLimit(Money.ZERO).left()
-            decide(overTheLimit, approve(0)).isRight() shouldBe true
+            decide(overTheLimit, approve(0)).shouldBeRight()
         }
 
         test("rejecting records the reason and who decided") {
@@ -212,6 +212,15 @@ class DeciderTest : FunSpec({
 
             replay(events) shouldBe paidOut
             replay(emptyList()) shouldBe ClaimState.NotSubmitted
+        }
+
+        test("an approval that covers expenses nobody claimed is corrupt too") {
+            val expensive = ClaimDetails(cancelledDeparture(), Ticket.Single(Money.ofKroner(2500)), expenses = null)
+            val overTheLimit = ClaimState.NotSubmitted.after(Submit(expensive, submittedAt))
+
+            shouldThrow<IllegalStateException> {
+                evolve(overTheLimit, ClaimEvent.ApprovedByOfficer(kn, Money.ofOre(1), receiptNote, decidedAt))
+            }
         }
 
         test("a stream that decide could not have produced is corrupt, and fails loudly") {

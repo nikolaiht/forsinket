@@ -2,11 +2,12 @@ package io.github.nikolaiht.forsinket.domain
 
 import arrow.core.EitherNel
 import arrow.core.NonEmptyList
+import arrow.core.nel
 import arrow.core.raise.Raise
-import arrow.core.raise.RaiseAccumulate
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
+import arrow.core.raise.withError
 import arrow.core.raise.zipOrAccumulate
 import java.time.LocalDateTime
 
@@ -73,7 +74,7 @@ fun validateClaim(
     either {
         zipOrAccumulate(
             { departureThatWasDue(departure, now) },
-            { ticket(rules, draft.ticket) },
+            { withNel { ticket(rules, draft.ticket) } },
             { draft.expenses?.let { withNel { expenses(rules, it) } } },
         ) { knownDeparture, ticket, expenses ->
             ClaimDetails(knownDeparture, ticket, expenses)
@@ -86,18 +87,23 @@ private fun Raise<FieldError>.departureThatWasDue(departure: Departure?, now: Lo
     return departure
 }
 
-private fun RaiseAccumulate<FieldError>.ticket(rules: RuleSet, draft: TicketDraft): Ticket =
+// A ticket and the expenses each have fields of their own, so each collects
+// its own errors and hands them up as a list.
+
+private fun Raise<NonEmptyList<FieldError>>.ticket(rules: RuleSet, draft: TicketDraft): Ticket =
     when (draft) {
         is TicketDraft.Single ->
-            Ticket.Single(positiveAmount(Field.TICKET_PRICE, draft.priceOre, max = rules.maxTicketPrice))
+            Ticket.Single(
+                withError({ it.nel() }) {
+                    positiveAmount(Field.TICKET_PRICE, draft.priceOre, max = rules.maxTicketPrice)
+                },
+            )
 
         is TicketDraft.Period ->
-            withNel {
-                zipOrAccumulate(
-                    { positiveAmount(Field.TICKET_PRICE, draft.priceOre, max = rules.maxTicketPrice) },
-                    { validity(draft.validityDays) },
-                ) { price, validity -> Ticket.Period(price, validity) }
-            }
+            zipOrAccumulate(
+                { positiveAmount(Field.TICKET_PRICE, draft.priceOre, max = rules.maxTicketPrice) },
+                { validity(draft.validityDays) },
+            ) { price, validity -> Ticket.Period(price, validity) }
     }
 
 private fun Raise<NonEmptyList<FieldError>>.expenses(rules: RuleSet, draft: ExpensesDraft): Expenses =
@@ -119,6 +125,6 @@ private fun Raise<FieldError>.validity(days: Int): Validity =
 
 /** Reads an enum from its [code], or raises [ErrorCode.UNKNOWN_VALUE] for [field]. */
 internal inline fun <reified E : Enum<E>> Raise<FieldError>.enumValue(field: Field, raw: String): E =
-    ensureNotNull(enumValues<E>().find { it.code == raw }) {
+    ensureNotNull(enumValues<E>().find { it.wireName == raw }) {
         FieldError(field, ErrorCode.UNKNOWN_VALUE)
     }

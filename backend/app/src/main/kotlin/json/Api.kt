@@ -15,7 +15,7 @@ import io.github.nikolaiht.forsinket.domain.FieldError
 import io.github.nikolaiht.forsinket.domain.Handling
 import io.github.nikolaiht.forsinket.domain.Rejection
 import io.github.nikolaiht.forsinket.domain.RuleSet
-import io.github.nikolaiht.forsinket.domain.code
+import io.github.nikolaiht.forsinket.domain.wireName
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -266,13 +266,13 @@ fun RuleSet.toDto(): RulesDto =
 fun Assessment.toDto(): AssessmentDto =
     when (this) {
         is Assessment.Eligible -> AssessmentDto.Eligible(calculation.toDto(), handling.toDto())
-        is Assessment.NotEligible -> AssessmentDto.NotEligible(reason.code)
+        is Assessment.NotEligible -> AssessmentDto.NotEligible(reason.wireName)
     }
 
 private fun Handling.toDto(): HandlingDto =
     when (this) {
         Handling.AutoApprove -> HandlingDto.AutoApprove
-        is Handling.ManualReview -> HandlingDto.ManualReview(reasons.map { it.code })
+        is Handling.ManualReview -> HandlingDto.ManualReview(reasons.map { it.wireName })
     }
 
 fun ClaimSnapshot.toDto(): ClaimDto =
@@ -293,7 +293,7 @@ private fun ClaimState.Filed.toDto(): StatusDto =
             StatusDto.Received
 
         is ClaimState.AwaitingReview ->
-            StatusDto.AwaitingReview(calculation.toDto(), reasons.map { it.code })
+            StatusDto.AwaitingReview(calculation.toDto(), reasons.map { it.wireName })
 
         is ClaimState.Approved ->
             StatusDto.Approved(calculation.toDto(), by.toDto(), decidedAt.toString())
@@ -313,8 +313,8 @@ private fun DecidedBy.toDto(): DecidedByDto =
 
 private fun Rejection.toDto(): RejectionDto =
     when (this) {
-        is Rejection.ByRules -> RejectionDto.ByRules(reason.code)
-        is Rejection.ByOfficer -> RejectionDto.ByOfficer(reason.code, officer.value, note.value)
+        is Rejection.ByRules -> RejectionDto.ByRules(reason.wireName)
+        is Rejection.ByOfficer -> RejectionDto.ByOfficer(reason.wireName, officer.value, note.value)
     }
 
 /** The history shows what happened and when. The amounts are in the status, where they are current. */
@@ -327,16 +327,16 @@ private fun ClaimEvent.toHistoryEntry(): HistoryEntryDto =
             HistoryEntryDto.ApprovedAutomatically(at.toString())
 
         is ClaimEvent.RejectedAutomatically ->
-            HistoryEntryDto.RejectedAutomatically(reason.code, at.toString())
+            HistoryEntryDto.RejectedAutomatically(reason.wireName, at.toString())
 
         is ClaimEvent.SentToReview ->
-            HistoryEntryDto.SentToReview(reasons.map { it.code }, at.toString())
+            HistoryEntryDto.SentToReview(reasons.map { it.wireName }, at.toString())
 
         is ClaimEvent.ApprovedByOfficer ->
             HistoryEntryDto.ApprovedByOfficer(officer.value, approvedExpenses.ore, note.value, at.toString())
 
         is ClaimEvent.RejectedByOfficer ->
-            HistoryEntryDto.RejectedByOfficer(officer.value, reason.code, note.value, at.toString())
+            HistoryEntryDto.RejectedByOfficer(officer.value, reason.wireName, note.value, at.toString())
 
         is ClaimEvent.PayoutRecorded ->
             HistoryEntryDto.PayoutRecorded(at.toString())
@@ -349,7 +349,7 @@ fun ClaimSummary.toDto(): SummaryDto =
     SummaryDto(
         id = id.value.toString(),
         version = version,
-        status = status.code,
+        status = status.wireName,
         submittedAt = submittedAt.toString(),
         departureDate = departureDate.toString(),
         trainNumber = trainNumber,
@@ -357,7 +357,7 @@ fun ClaimSummary.toDto(): SummaryDto =
     )
 
 fun FieldError.toDto(): FieldErrorDto =
-    FieldErrorDto(field.path, code.code)
+    FieldErrorDto(field.path, code.wireName)
 
 /** Where a field sits in the request body, so a client can show the error next to the right input. */
 private val Field.path: String

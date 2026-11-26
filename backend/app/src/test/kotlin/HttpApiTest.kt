@@ -2,8 +2,10 @@ package io.github.nikolaiht.forsinket.app
 
 import io.github.nikolaiht.forsinket.app.http.module
 import io.github.nikolaiht.forsinket.app.json.AppJson
+import io.github.nikolaiht.forsinket.app.store.ClaimStore
 import io.github.nikolaiht.forsinket.app.store.PostgresClaimStore
 import io.github.nikolaiht.forsinket.app.traffic.SyntheticTrafficData
+import io.github.nikolaiht.forsinket.domain.ClaimEvent
 import io.github.nikolaiht.forsinket.domain.ClaimId
 import io.github.nikolaiht.forsinket.domain.RulesV1
 import io.kotest.assertions.withClue
@@ -102,7 +104,7 @@ class HttpApiTest : FunSpec({
             maxClaims = maxClaims,
         )
         runTestApplication {
-            application { module(service, SyntheticTrafficData, RulesV1, clock, webRoot) }
+            application { module(service, webRoot) }
             Api(client, clock).test()
         }
     }
@@ -265,6 +267,30 @@ class HttpApiTest : FunSpec({
                     }
                 }
                 store.count() shouldBe 0
+            }
+        }
+
+        test("a note with a character the database cannot store is a validation error, not a server error") {
+            withApi(listOf(fixtures.idB)) {
+                postExample("/api/claims", "claim-request.period-with-expenses.json")
+                val withNul =
+                    """{"expectedVersion":2,"officer":"KN","note":"a\u0000b","decision":{"type":"approve","approvedExpenses":0}}"""
+
+                val response = post("/api/claims/${fixtures.idB.value}/decision", withNul)
+
+                response.status shouldBe HttpStatusCode.UnprocessableEntity
+                response.json().field("errors").jsonArray.map { it.field("field").jsonPrimitive.content } shouldBe listOf("note")
+            }
+        }
+
+        test("a body far larger than any request this API takes is turned away unread") {
+            withApi {
+                val huge = """{"departureId":"${"x".repeat(100_000)}","ticket":{"type":"single","price":34900}}"""
+
+                val response = post("/api/claims", huge)
+
+                response.status shouldBe HttpStatusCode.PayloadTooLarge
+                response.json().type shouldBe "malformed_request"
             }
         }
 
@@ -451,7 +477,13 @@ class HttpApiTest : FunSpec({
 
         test("a missing or unreadable date is a malformed request") {
             withApi {
-                listOf("/api/departures", "/api/departures?date=20.11.2026", "/api/departures?date=").forEach { path ->
+                listOf(
+                    "/api/departures",
+                    "/api/departures?date=20.11.2026",
+                    "/api/departures?date=",
+                    "/api/departures?date=-999999999-01-01",
+                    "/api/departures?date=2026-W47-1",
+                ).forEach { path ->
                     val response = get(path)
 
                     response.status shouldBe HttpStatusCode.BadRequest
@@ -489,6 +521,22 @@ class HttpApiTest : FunSpec({
                 response.bodyAsText() shouldBe "body { margin: 0 }"
                 response.headers[HttpHeaders.ContentType].orEmpty() shouldStartWith "text/css"
             }
+        }
+    }
+
+    test("a bug, or a database that is gone, answers with an error the app can read, and gives nothing away") {
+        val broken = object : ClaimStore by InMemoryClaimStore() {
+            override fun load(id: ClaimId): List<ClaimEvent> = throw IllegalStateException("connection refused: db:5432")
+        }
+        val service = ClaimService(broken, SyntheticTrafficData, RulesV1, TestClock(fixtures.submittedA), { fixtures.idA }, null)
+
+        runTestApplication {
+            application { module(service, webRoot) }
+
+            val response = client.get("/api/claims/${fixtures.idA.value}")
+
+            response.status shouldBe HttpStatusCode.InternalServerError
+            response.json() shouldBe contractExample("error.internal-error.json")
         }
     }
 

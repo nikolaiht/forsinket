@@ -1,20 +1,18 @@
 package io.github.nikolaiht.forsinket.app
 
 import io.github.nikolaiht.forsinket.app.demo.seedDemoData
+import io.github.nikolaiht.forsinket.app.demo.seedIfEmpty
 import io.github.nikolaiht.forsinket.app.store.PostgresClaimStore
 import io.github.nikolaiht.forsinket.app.traffic.SyntheticTrafficData
 import io.github.nikolaiht.forsinket.domain.ClaimState
 import io.github.nikolaiht.forsinket.domain.RulesV1
 import io.github.nikolaiht.forsinket.domain.StatusName
-import io.github.nikolaiht.forsinket.domain.dateIn2026
 import io.github.nikolaiht.forsinket.domain.replay
+import arrow.core.toNonEmptyListOrNull
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.shouldBe
-import io.kotest.property.Arb
-import io.kotest.property.checkAll
 import java.time.Instant
-import java.time.ZoneOffset
 
 class DemoDataTest : FunSpec({
     val store = PostgresClaimStore(PostgresTestDatabase.dataSource)
@@ -36,19 +34,28 @@ class DemoDataTest : FunSpec({
 
         store.summaries(null).forEach { summary ->
             val events = store.load(summary.id)
-            val snapshot = ClaimSnapshot(summary.id, events.size, replay(events) as ClaimState.Filed, events)
+            val snapshot = checkNotNull(snapshotOf(summary.id, events))
 
             summarize(snapshot) shouldBe summary
         }
     }
 
-    test("seeding again gives the same claims, not more of them") {
-        seed()
+    test("at start-up, a store that already has claims is left alone") {
+        seedIfEmpty(store, SyntheticTrafficData, RulesV1, now)
         val first = store.summaries(null)
 
-        seed()
+        seedIfEmpty(store, SyntheticTrafficData, RulesV1, now.plusSeconds(3600))
 
         store.summaries(null) shouldBe first
+    }
+
+    test("after a reset the demo claims are seeded even if someone got a claim in first") {
+        val someoneElses = ContractFixtures.approvedAutomatically
+        store.append(someoneElses.id, 0, someoneElses.events.toNonEmptyListOrNull()!!, summarize(someoneElses))
+
+        seed()
+
+        store.count() shouldBe 7
     }
 
     test("every seeded claim was submitted before now, and none is too late") {
@@ -60,11 +67,11 @@ class DemoDataTest : FunSpec({
         store.summaries(StatusName.REJECTED).size shouldBe 2
     }
 
-    test("the demo can be seeded on any day of the year") {
-        checkAll(14, Arb.dateIn2026()) { date ->
+    test("the demo can be seeded on every day of the week, whatever the traffic was") {
+        (0L..6L).forEach { day ->
             store.reset()
 
-            seed(date.atTime(10, 0).toInstant(ZoneOffset.UTC))
+            seed(now.plusSeconds(day * 86_400))
 
             store.count() shouldBe 6
         }

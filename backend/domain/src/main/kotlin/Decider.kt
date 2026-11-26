@@ -58,7 +58,7 @@ fun decide(
 
 /** Receiving a claim and assessing it are two facts, so they are two events. */
 private fun submit(rules: RuleSet, command: Submit): NonEmptyList<ClaimEvent> {
-    val submittedOn = command.at.atZone(OSLO).toLocalDate()
+    val submittedOn = command.at.inOslo().toLocalDate()
     val outcome =
         when (val assessment = assess(rules, command.claim, submittedOn)) {
             is Assessment.NotEligible ->
@@ -171,6 +171,9 @@ private fun Calculation.withCoveredExpenses(approved: Money): Calculation =
         is ExpenseAssessment.PendingReview ->
             copy(expenses = ExpenseAssessment.Covered(claimed = pending.claimed, approved = approved))
 
-        ExpenseAssessment.NoneClaimed, is ExpenseAssessment.NotCovered, is ExpenseAssessment.Covered ->
+        ExpenseAssessment.NoneClaimed, is ExpenseAssessment.NotCovered, is ExpenseAssessment.Covered -> {
+            // decide only lets an officer cover expenses that were up for review.
+            check(approved == Money.ZERO) { "corrupt event stream: expenses approved that were not up for review" }
             this
+        }
     }

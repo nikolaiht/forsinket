@@ -35,7 +35,7 @@ class PostgresClaimStoreTest : FunSpec({
     /** The claim as the store has it, rebuilt from its events. */
     fun stored(id: ClaimId): ClaimSnapshot {
         val events = store.load(id)
-        return ClaimSnapshot(id, events.size, replay(events) as ClaimState.Filed, events)
+        return checkNotNull(snapshotOf(id, events))
     }
 
     test("events are read back in the order they were written") {

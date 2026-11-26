@@ -4,8 +4,6 @@ import io.github.nikolaiht.forsinket.app.ApiError
 import io.github.nikolaiht.forsinket.app.ClaimService
 import io.github.nikolaiht.forsinket.app.json.AppJson
 import io.github.nikolaiht.forsinket.app.json.ErrorDto
-import io.github.nikolaiht.forsinket.app.traffic.TrafficData
-import io.github.nikolaiht.forsinket.domain.RuleSet
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
@@ -14,6 +12,8 @@ import io.ktor.server.application.log
 import io.ktor.server.http.content.singlePageApplication
 import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.plugins.ContentTransformationException
+import io.ktor.server.plugins.PayloadTooLargeException
+import io.ktor.server.plugins.bodylimit.RequestBodyLimit
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.response.respond
@@ -21,7 +21,6 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import java.nio.file.Path
-import java.time.Clock
 
 /**
  * The HTTP application. Everything it needs is passed in, so a test can run
@@ -29,21 +28,26 @@ import java.time.Clock
  *
  * @param webRoot the directory with the built Elm app, or null to serve the API only
  */
-fun Application.module(
-    service: ClaimService,
-    traffic: TrafficData,
-    rules: RuleSet,
-    clock: Clock,
-    webRoot: Path?,
-) {
+fun Application.module(service: ClaimService, webRoot: Path?) {
     install(ContentNegotiation) {
         json(AppJson)
     }
 
-    // Exceptions become responses in two cases only, neither of which the
+    // No request this API takes comes near this size.
+    install(RequestBodyLimit) {
+        bodyLimit { MAX_REQUEST_BODY_BYTES }
+    }
+
+    // Exceptions become responses for two kinds of thing, neither of which the
     // domain could have returned as a value: the framework could not read a
-    // request body (not JSON, or not labelled as JSON), or there is a bug.
+    // request body (too large, not JSON, or not labelled as JSON), or there is
+    // a bug or a broken database. The second kind is logged, and the response
+    // says nothing about what went wrong inside.
     install(StatusPages) {
+        exception<PayloadTooLargeException> { call, _ ->
+            val body: ErrorDto = ErrorDto.MalformedRequest("The request body is too large.")
+            call.respond(HttpStatusCode.PayloadTooLarge, body)
+        }
         exception<BadRequestException> { call, _ ->
             call.respondError(ApiError.MalformedRequest(ErrorDto.UNREADABLE_BODY))
         }
@@ -63,7 +67,7 @@ fun Application.module(
         }
 
         route("/api") {
-            api(service, traffic, rules, clock)
+            api(service)
 
             // Anything else under /api is a mistake by a client, and must not
             // fall through to the web app below and come back as HTML.
@@ -80,3 +84,5 @@ fun Application.module(
         }
     }
 }
+
+private const val MAX_REQUEST_BODY_BYTES = 64L * 1024

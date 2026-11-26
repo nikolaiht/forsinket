@@ -70,11 +70,11 @@ class ValidationTest : FunSpec({
         val leavesToday = departure(delayMinutes = 61, date = today)
 
         validate(single, found = leavesToday, at = today.atTime(16, 41)).isLeft() shouldBe true
-        validate(single, found = leavesToday, at = today.atTime(16, 42)).isRight() shouldBe true
+        validate(single, found = leavesToday, at = today.atTime(16, 42)).shouldBeRight()
     }
 
     test("the ticket price is capped at 20 000 kr") {
-        validate(single.copy(ticket = TicketDraft.Single(2_000_000))).isRight() shouldBe true
+        validate(single.copy(ticket = TicketDraft.Single(2_000_000))).shouldBeRight()
         validate(single.copy(ticket = TicketDraft.Single(2_000_001))) shouldBe
             nonEmptyListOf(FieldError(TICKET_PRICE, ABOVE_MAXIMUM)).left()
     }
@@ -90,7 +90,7 @@ class ValidationTest : FunSpec({
     }
 
     test("claimed expenses are capped at 10 000 kr") {
-        validate(single.copy(expenses = ExpensesDraft(1_000_000, "other"))).isRight() shouldBe true
+        validate(single.copy(expenses = ExpensesDraft(1_000_000, "other"))).shouldBeRight()
         validate(single.copy(expenses = ExpensesDraft(1_000_001, "other"))) shouldBe
             nonEmptyListOf(FieldError(EXPENSES_AMOUNT, ABOVE_MAXIMUM)).left()
     }

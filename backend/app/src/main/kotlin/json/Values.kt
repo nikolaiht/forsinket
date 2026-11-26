@@ -13,7 +13,7 @@ import io.github.nikolaiht.forsinket.domain.Ticket
 import io.github.nikolaiht.forsinket.domain.TicketDraft
 import io.github.nikolaiht.forsinket.domain.TicketValue
 import io.github.nikolaiht.forsinket.domain.Validity
-import io.github.nikolaiht.forsinket.domain.code
+import io.github.nikolaiht.forsinket.domain.wireName
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.time.LocalDate
@@ -110,7 +110,7 @@ fun Ticket.toDto(): TicketDto =
     }
 
 fun Expenses.toDto(): ExpensesDto =
-    ExpensesDto(amount.ore, kind.code)
+    ExpensesDto(amount.ore, kind.wireName)
 
 fun Outcome.toDto(): OutcomeDto =
     when (this) {

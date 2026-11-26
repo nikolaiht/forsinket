@@ -26,16 +26,24 @@ value class OfficerId private constructor(val value: String) {
     }
 }
 
-/** An officer's free-text reasoning. Trimmed, possibly empty, at most [MAX_LENGTH] characters. */
+/**
+ * An officer's free-text reasoning. Trimmed, possibly empty, at most
+ * [MAX_LENGTH] characters, and made of text: line breaks are fine, other
+ * control characters are not.
+ */
 @JvmInline
 value class Note private constructor(val value: String) {
     companion object {
         const val MAX_LENGTH = 500
+        private const val LINE_BREAKS_AND_TABS = "\n\r\t"
 
         fun parse(raw: String): Either<FieldError, Note> =
             either {
                 val trimmed = raw.trim()
                 ensure(trimmed.length <= MAX_LENGTH) { FieldError(Field.NOTE, ErrorCode.TOO_LONG) }
+                ensure(trimmed.none { it.isISOControl() && it !in LINE_BREAKS_AND_TABS }) {
+                    FieldError(Field.NOTE, ErrorCode.INVALID_FORMAT)
+                }
                 Note(trimmed)
             }
     }

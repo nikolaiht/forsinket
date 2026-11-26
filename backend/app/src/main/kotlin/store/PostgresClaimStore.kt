@@ -5,8 +5,8 @@ import arrow.core.NonEmptyList
 import arrow.core.left
 import arrow.core.right
 import io.github.nikolaiht.forsinket.app.ClaimSummary
-import io.github.nikolaiht.forsinket.app.json.AppJson
 import io.github.nikolaiht.forsinket.app.json.StoredEvent
+import io.github.nikolaiht.forsinket.app.json.StoredJson
 import io.github.nikolaiht.forsinket.app.json.storedEnum
 import io.github.nikolaiht.forsinket.app.json.toDomain
 import io.github.nikolaiht.forsinket.app.json.toStored
@@ -14,7 +14,7 @@ import io.github.nikolaiht.forsinket.domain.ClaimEvent
 import io.github.nikolaiht.forsinket.domain.ClaimId
 import io.github.nikolaiht.forsinket.domain.Money
 import io.github.nikolaiht.forsinket.domain.StatusName
-import io.github.nikolaiht.forsinket.domain.code
+import io.github.nikolaiht.forsinket.domain.wireName
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.sql.Connection
@@ -35,7 +35,7 @@ class PostgresClaimStore(private val dataSource: DataSource) : ClaimStore {
             ).use { statement ->
                 statement.setObject(1, id.value)
                 statement.executeQuery().use { rows ->
-                    rows.map { AppJson.decodeFromString(StoredEvent.serializer(), it.getString("payload")).toDomain() }
+                    rows.map { StoredJson.decodeFromString(StoredEvent.serializer(), it.getString("payload")).toDomain() }
                 }
             }
         }
@@ -45,8 +45,9 @@ class PostgresClaimStore(private val dataSource: DataSource) : ClaimStore {
         expectedVersion: Int,
         events: NonEmptyList<ClaimEvent>,
         summary: ClaimSummary,
-    ): Either<VersionConflict, Int> =
-        try {
+    ): Either<VersionConflict, Int> {
+        require(summary.id == id) { "the summary of claim ${summary.id.value} was given for claim ${id.value}" }
+        return try {
             dataSource.transaction { connection ->
                 val currentVersion = connection.currentVersion(id)
                 if (currentVersion != expectedVersion) {
@@ -65,6 +66,7 @@ class PostgresClaimStore(private val dataSource: DataSource) : ClaimStore {
             if (e.sqlState != UNIQUE_VIOLATION) throw e
             VersionConflict(dataSource.connection.use { it.currentVersion(id) }).left()
         }
+    }
 
     override fun summaries(status: StatusName?): List<ClaimSummary> =
         dataSource.connection.use { connection ->
@@ -76,7 +78,7 @@ class PostgresClaimStore(private val dataSource: DataSource) : ClaimStore {
                 ORDER BY submitted_at DESC, claim_id
                 """.trimIndent(),
             ).use { statement ->
-                statement.setString(1, status?.code)
+                statement.setString(1, status?.wireName)
                 statement.executeQuery().use { rows -> rows.map(::summary) }
             }
         }
@@ -107,7 +109,7 @@ class PostgresClaimStore(private val dataSource: DataSource) : ClaimStore {
         }
 
     private fun Connection.insertEvent(id: ClaimId, version: Int, event: ClaimEvent) {
-        val payload = AppJson.encodeToJsonElement(StoredEvent.serializer(), event.toStored())
+        val payload = StoredJson.encodeToJsonElement(StoredEvent.serializer(), event.toStored())
         prepareStatement(
             """
             INSERT INTO claim_events (claim_id, version, event_type, payload, occurred_at)
@@ -137,7 +139,7 @@ class PostgresClaimStore(private val dataSource: DataSource) : ClaimStore {
         ).use { statement ->
             statement.setObject(1, summary.id.value)
             statement.setInt(2, summary.version)
-            statement.setString(3, summary.status.code)
+            statement.setString(3, summary.status.wireName)
             statement.setObject(4, summary.submittedAt.atOffset(ZoneOffset.UTC))
             statement.setObject(5, summary.departureDate)
             statement.setString(6, summary.trainNumber)

@@ -2,12 +2,13 @@ package io.github.nikolaiht.forsinket.domain
 
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
-import io.kotest.matchers.longs.shouldBeInRange
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.long
 import io.kotest.property.checkAll
+import java.math.BigDecimal
+import java.math.RoundingMode
 
 class MoneyTest : FunSpec({
     test("percent rounds half up to whole øre") {
@@ -35,9 +36,23 @@ class MoneyTest : FunSpec({
         shouldThrow<IllegalArgumentException> { Money.ofOre(-1) }
     }
 
-    test("percent of 0..100 never exceeds the amount and never goes below zero") {
-        checkAll(Arb.long(0L..2_000_000L), Arb.int(0..100)) { ore, percent ->
-            Money.ofOre(ore).percent(percent).ore shouldBeInRange 0L..ore
+    test("percent and dividedBy agree with decimal arithmetic rounded half up") {
+        checkAll(Arb.long(0L..2_000_000L), Arb.int(0..100), Arb.int(1..366)) { ore, percent, parts ->
+            Money.ofOre(ore).percent(percent).ore shouldBe
+                BigDecimal(ore).multiply(BigDecimal(percent)).divide(BigDecimal(100), 0, RoundingMode.HALF_UP).toLong()
+            Money.ofOre(ore).dividedBy(parts).ore shouldBe
+                BigDecimal(ore).divide(BigDecimal(parts), 0, RoundingMode.HALF_UP).toLong()
         }
+    }
+
+    test("a percentage is between 0 and 100") {
+        shouldThrow<IllegalArgumentException> { Money.ofKroner(100).percent(101) }
+        shouldThrow<IllegalArgumentException> { Money.ofKroner(100).percent(-1) }
+    }
+
+    test("an amount too large to hold fails loudly, and does not wrap around") {
+        shouldThrow<ArithmeticException> { Money.ofOre(Long.MAX_VALUE) + Money.ofOre(1) }
+        shouldThrow<ArithmeticException> { Money.ofKroner(Long.MAX_VALUE) }
+        shouldThrow<ArithmeticException> { Money.ofOre(Long.MAX_VALUE).percent(50) }
     }
 })

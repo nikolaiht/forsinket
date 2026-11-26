@@ -62,8 +62,10 @@ data class ClaimDetails(
 )
 
 /**
- * How enum values are written outside the domain: the name in lower case.
- * Validation reads them this way, and the JSON layer writes them this way.
+ * The name an enum value goes by outside the program, in the API and in stored
+ * events: the constant's name in lower case. Validation reads values this way,
+ * and the JSON layer writes them this way. Renaming a constant therefore
+ * changes the API and the stored data, which `WireNamesTest` is there to catch.
  */
-val Enum<*>.code: String
+val Enum<*>.wireName: String
     get() = name.lowercase()

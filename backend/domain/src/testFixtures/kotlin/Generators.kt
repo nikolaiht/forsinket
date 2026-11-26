@@ -1,5 +1,6 @@
 package io.github.nikolaiht.forsinket.domain
 
+import arrow.core.Either
 import arrow.core.NonEmptyList
 import arrow.core.nonEmptyListOf
 import io.kotest.property.Arb
@@ -51,9 +52,14 @@ fun Arb.Companion.ticket(): Arb<Ticket> =
         },
     )
 
+/**
+ * Any outcome. The minutes on either side of each limit in the rules are
+ * generated on purpose, not left to chance.
+ */
 fun Arb.Companion.outcome(): Arb<Outcome> =
     Arb.choice(
         Arb.int(0..300).map { Outcome.Ran(it) },
+        Arb.of(0, 29, 30, 59, 60, 119, 120).map { Outcome.Ran(it) },
         Arb.constant(Outcome.Cancelled),
     )
 
@@ -72,9 +78,9 @@ fun Arb.Companion.claimDetails(date: Arb<LocalDate> = Arb.constant(exampleDate))
 fun Arb.Companion.dateIn2026(): Arb<LocalDate> =
     Arb.int(0..364).map { LocalDate.of(2026, 1, 1).plusDays(it.toLong()) }
 
-/** Any second in 2026. */
+/** Any millisecond in 2026: the precision the service records. */
 fun Arb.Companion.instant(): Arb<Instant> =
-    Arb.long(1_767_225_600L..1_798_761_599L).map(Instant::ofEpochSecond)
+    Arb.long(1_767_225_600_000L..1_798_761_599_999L).map(Instant::ofEpochMilli)
 
 fun Arb.Companion.officerId(): Arb<OfficerId> =
     Arb.string(2..10, Codepoint.az()).map(::officerId)
@@ -172,3 +178,7 @@ fun officerId(raw: String): OfficerId =
 
 fun note(raw: String): Note =
     Note.parse(raw).fold({ error("not a valid note in a test: $raw") }, { it })
+
+/** The value of an Either that must be a Right, with the Left in the message when it is not. */
+fun <A, B> Either<A, B>.shouldBeRight(): B =
+    fold({ throw AssertionError("expected a Right, but got Left($it)") }, { it })

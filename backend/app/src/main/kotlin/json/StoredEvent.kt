@@ -1,5 +1,6 @@
 package io.github.nikolaiht.forsinket.app.json
 
+import arrow.core.getOrElse
 import arrow.core.toNonEmptyListOrNull
 import io.github.nikolaiht.forsinket.domain.ClaimDetails
 import io.github.nikolaiht.forsinket.domain.ClaimEvent
@@ -9,7 +10,7 @@ import io.github.nikolaiht.forsinket.domain.Note
 import io.github.nikolaiht.forsinket.domain.OfficerId
 import io.github.nikolaiht.forsinket.domain.RejectionReason
 import io.github.nikolaiht.forsinket.domain.ReviewReason
-import io.github.nikolaiht.forsinket.domain.code
+import io.github.nikolaiht.forsinket.domain.wireName
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.time.Instant
@@ -86,16 +87,16 @@ fun ClaimEvent.toStored(): StoredEvent =
             StoredEvent.ApprovedAutomatically(calculation.toDto(), at.toString())
 
         is ClaimEvent.RejectedAutomatically ->
-            StoredEvent.RejectedAutomatically(reason.code, at.toString())
+            StoredEvent.RejectedAutomatically(reason.wireName, at.toString())
 
         is ClaimEvent.SentToReview ->
-            StoredEvent.SentToReview(calculation.toDto(), reasons.map { it.code }, at.toString())
+            StoredEvent.SentToReview(calculation.toDto(), reasons.map { it.wireName }, at.toString())
 
         is ClaimEvent.ApprovedByOfficer ->
             StoredEvent.ApprovedByOfficer(officer.value, approvedExpenses.ore, note.value, at.toString())
 
         is ClaimEvent.RejectedByOfficer ->
-            StoredEvent.RejectedByOfficer(officer.value, reason.code, note.value, at.toString())
+            StoredEvent.RejectedByOfficer(officer.value, reason.wireName, note.value, at.toString())
 
         is ClaimEvent.PayoutRecorded ->
             StoredEvent.PayoutRecorded(at.toString())
@@ -136,7 +137,7 @@ fun StoredEvent.toDomain(): ClaimEvent {
 }
 
 private fun storedOfficer(raw: String): OfficerId =
-    OfficerId.parse(raw).fold({ error("corrupt stored data: '$raw' is not an officer id") }, { it })
+    OfficerId.parse(raw).getOrElse { error("corrupt stored data: '$raw' is not an officer id") }
 
 private fun storedNote(raw: String): Note =
-    Note.parse(raw).fold({ error("corrupt stored data: a stored note is not a valid note") }, { it })
+    Note.parse(raw).getOrElse { error("corrupt stored data: a stored note is not a valid note") }

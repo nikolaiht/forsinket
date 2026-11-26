@@ -39,6 +39,10 @@ class ConfigTest : FunSpec({
             ).right()
     }
 
+    test("an empty WEB_ROOT means no web app, not the working directory") {
+        configFrom(database + ("WEB_ROOT" to "  ")).map { it.webRoot } shouldBe null.right()
+    }
+
     test("demo mode has a cap on claims and no reset unless one is asked for") {
         configFrom(database + ("DEMO_MODE" to "true")).map { it.demo } shouldBe
             DemoConfig(resetEvery = null, maxClaims = 500).right()

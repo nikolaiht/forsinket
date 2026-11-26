@@ -1,0 +1,27 @@
+{
+  "type": "submitted",
+  "claim": {
+    "departure": {
+      "id": "2026-11-20-FB14",
+      "date": "2026-11-20",
+      "trainNumber": "FB14",
+      "origin": "Storhavn",
+      "destination": "Fjordvik",
+      "scheduledDeparture": "12:12",
+      "outcome": {
+        "type": "ran",
+        "delayMinutes": 130
+      }
+    },
+    "ticket": {
+      "type": "period",
+      "price": 84900,
+      "validityDays": 30
+    },
+    "expenses": {
+      "amount": 62000,
+      "kind": "taxi"
+    }
+  },
+  "at": "2026-11-21T10:00:00Z"
+}

@@ -1,0 +1,7 @@
+{
+  "type": "rejected_by_officer",
+  "officer": "KN",
+  "reason": "invalid_ticket",
+  "note": "Billetten gjaldt en annen dag.",
+  "at": "2026-11-21T12:30:00Z"
+}

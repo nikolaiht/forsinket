@@ -2,6 +2,8 @@ package io.github.nikolaiht.forsinket.domain
 
 import arrow.core.NonEmptyList
 import arrow.core.nonEmptyListOf
+import java.time.Instant
+import java.time.LocalDateTime
 import java.time.ZoneId
 
 /** From [fromMinutes] of delay and up, [percent] of the ticket value is paid. */
@@ -25,6 +27,12 @@ data class RuleSet(
     init {
         require(bands.zipWithNext().all { (lower, higher) -> lower.fromMinutes < higher.fromMinutes }) {
             "delay bands must be in ascending order"
+        }
+        require(bands.all { it.percent in 0..100 }) {
+            "a band pays between 0 and 100 % of the ticket value"
+        }
+        require(bands.zipWithNext().all { (lower, higher) -> lower.percent <= higher.percent }) {
+            "a longer delay must not pay less than a shorter one"
         }
     }
 
@@ -58,5 +66,8 @@ val RulesV1 = RuleSet(
     maxClaimedExpenses = Money.ofKroner(10_000),
 )
 
-/** Deadlines are counted in calendar days where the trains run. */
+/** Deadlines and departure times are counted on the clock where the trains run. */
 val OSLO: ZoneId = ZoneId.of("Europe/Oslo")
+
+/** What the clock in Oslo showed at this point in time. */
+fun Instant.inOslo(): LocalDateTime = atZone(OSLO).toLocalDateTime()

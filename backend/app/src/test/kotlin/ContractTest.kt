@@ -9,6 +9,7 @@ import io.github.nikolaiht.forsinket.app.json.PayoutRequestDto
 import io.github.nikolaiht.forsinket.app.json.toDraft
 import io.github.nikolaiht.forsinket.app.json.toDto
 import io.github.nikolaiht.forsinket.app.traffic.SyntheticTrafficData
+import io.github.nikolaiht.forsinket.domain.ClaimDetails
 import io.github.nikolaiht.forsinket.domain.ClaimDraft
 import io.github.nikolaiht.forsinket.domain.DecisionChoiceDraft
 import io.github.nikolaiht.forsinket.domain.DecisionDraft
@@ -20,7 +21,7 @@ import io.github.nikolaiht.forsinket.domain.RulesV1
 import io.github.nikolaiht.forsinket.domain.StatusName
 import io.github.nikolaiht.forsinket.domain.TicketDraft
 import io.github.nikolaiht.forsinket.domain.assess
-import io.github.nikolaiht.forsinket.domain.code
+import io.github.nikolaiht.forsinket.domain.wireName
 import io.github.nikolaiht.forsinket.domain.validateClaim
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -53,7 +54,7 @@ class ContractTest : FunSpec({
         }
 
         test("assessments") {
-            fun assessment(claim: io.github.nikolaiht.forsinket.domain.ClaimDetails) =
+            fun assessment(claim: ClaimDetails) =
                 AppJson.encodeToJsonElement(assess(RulesV1, claim, submittedOn).toDto())
 
             assessment(fixtures.claimA) shouldMatchExample "assessment.auto-approve.json"
@@ -72,6 +73,10 @@ class ContractTest : FunSpec({
             test(example) {
                 AppJson.encodeToJsonElement(snapshot.toDto()) shouldMatchExample example
             }
+        }
+
+        test("the worked examples for the front page") {
+            AppJson.encodeToJsonElement(examples(RulesV1).map { it.toDto() }) shouldMatchExample "examples.json"
         }
 
         test("claim summaries") {
@@ -151,11 +156,12 @@ class ContractTest : FunSpec({
         test("the other errors") {
             error(ErrorDto.NotFound) shouldMatchExample "error.not-found.json"
             error(ErrorDto.VersionConflict(currentVersion = 3)) shouldMatchExample "error.version-conflict.json"
-            error(ErrorDto.InvalidTransition(StatusName.APPROVED.code)) shouldMatchExample
+            error(ErrorDto.InvalidTransition(StatusName.APPROVED.wireName)) shouldMatchExample
                 "error.invalid-transition.json"
             error(ErrorDto.MalformedRequest(ErrorDto.UNREADABLE_BODY)) shouldMatchExample
                 "error.malformed-request.json"
             error(ErrorDto.DemoLimitReached) shouldMatchExample "error.demo-limit-reached.json"
+            error(ErrorDto.InternalError) shouldMatchExample "error.internal-error.json"
         }
     }
 })

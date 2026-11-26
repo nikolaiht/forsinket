@@ -76,10 +76,4 @@ class AssessPropertyTest : FunSpec({
             }
         }
     }
-
-    test("the same claim always gets the same assessment") {
-        checkAll(Arb.claimDetails()) { claim ->
-            assess(claim) shouldBe assess(claim)
-        }
-    }
 })

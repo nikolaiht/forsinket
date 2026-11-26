@@ -11,8 +11,9 @@ import io.github.nikolaiht.forsinket.domain.ExpensesDraft
 import io.github.nikolaiht.forsinket.domain.RejectionReason
 import io.github.nikolaiht.forsinket.domain.RulesV1
 import io.github.nikolaiht.forsinket.domain.TicketDraft
-import io.github.nikolaiht.forsinket.domain.code
+import io.github.nikolaiht.forsinket.domain.wireName
 import io.github.nikolaiht.forsinket.domain.replay
+import io.github.nikolaiht.forsinket.domain.shouldBeRight
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
@@ -58,7 +59,7 @@ private val actions: Arb<Action> =
     Arb.choice(
         Arb.long(0L..100_000L).map { Action.Decide(DecisionDraft("KN", "", DecisionChoiceDraft.Approve(it))) },
         Arb.enum<RejectionReason>().map {
-            Action.Decide(DecisionDraft("KN", "Begrunnelse", DecisionChoiceDraft.Reject(it.code)))
+            Action.Decide(DecisionDraft("KN", "Begrunnelse", DecisionChoiceDraft.Reject(it.wireName)))
         },
         Arb.constant(Action.Payout),
     )
@@ -74,7 +75,7 @@ class ClaimServicePropertyTest : FunSpec({
             val id = ClaimId(UUID.randomUUID())
             val service = ClaimService(store, SyntheticTrafficData, RulesV1, clock, newId = { id }, maxClaims = null)
 
-            service.submit(draft).isRight() shouldBe true
+            service.submit(draft).shouldBeRight()
 
             followUps.forEach { action ->
                 // The outcome does not matter here: accepted or refused, the two must agree afterwards.
@@ -85,7 +86,7 @@ class ClaimServicePropertyTest : FunSpec({
                 }
 
                 val events = store.load(id)
-                val snapshot = ClaimSnapshot(id, events.size, replay(events) as ClaimState.Filed, events)
+                val snapshot = checkNotNull(snapshotOf(id, events))
                 store.summaries(null).single { it.id == id } shouldBe summarize(snapshot)
             }
         }

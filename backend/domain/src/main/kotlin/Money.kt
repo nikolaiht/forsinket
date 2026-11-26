@@ -5,16 +5,17 @@ package io.github.nikolaiht.forsinket.domain
  *
  * It is never negative. A negative amount would be a bug in the caller, not
  * something a passenger or an officer can cause, so it fails loudly instead of
- * being modelled as a value.
+ * being modelled as a value. The same goes for an amount too large to hold:
+ * the arithmetic throws instead of wrapping around.
  */
 @JvmInline
 value class Money private constructor(val ore: Long) : Comparable<Money> {
-    operator fun plus(other: Money): Money = Money(ore + other.ore)
+    operator fun plus(other: Money): Money = Money(Math.addExact(ore, other.ore))
 
     /** [percent] of this amount, rounded to the nearest øre. */
     fun percent(percent: Int): Money {
-        require(percent >= 0) { "percent must not be negative, was $percent" }
-        return Money(roundHalfUp(ore * percent, 100))
+        require(percent in 0..100) { "a percentage is between 0 and 100, was $percent" }
+        return Money(roundHalfUp(Math.multiplyExact(ore, percent.toLong()), 100))
     }
 
     /** This amount split into [divisor] equal parts, rounded to the nearest øre. */
@@ -35,7 +36,7 @@ value class Money private constructor(val ore: Long) : Comparable<Money> {
             return Money(ore)
         }
 
-        fun ofKroner(kroner: Long): Money = ofOre(kroner * 100)
+        fun ofKroner(kroner: Long): Money = ofOre(Math.multiplyExact(kroner, 100L))
     }
 }
 
@@ -45,4 +46,4 @@ value class Money private constructor(val ore: Long) : Comparable<Money> {
  * shown for a step is exactly the amount the next step uses.
  */
 private fun roundHalfUp(numerator: Long, denominator: Long): Long =
-    (2 * numerator + denominator) / (2 * denominator)
+    Math.addExact(Math.multiplyExact(2L, numerator), denominator) / Math.multiplyExact(2L, denominator)

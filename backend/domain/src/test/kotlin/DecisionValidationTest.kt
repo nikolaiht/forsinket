@@ -52,7 +52,7 @@ class DecisionValidationTest : FunSpec({
 
     test("the officer is identified by 2 to 10 letters") {
         listOf("KN", "åse", "ABCDEFGHIJ").forEach { officer ->
-            validateDecision(approval.copy(officer = officer), at).isRight() shouldBe true
+            validateDecision(approval.copy(officer = officer), at).shouldBeRight()
         }
         listOf("K", "KN1", "K N", "ABCDEFGHIJK").forEach { officer ->
             validateDecision(approval.copy(officer = officer), at) shouldBe
@@ -70,12 +70,23 @@ class DecisionValidationTest : FunSpec({
     }
 
     test("a note can be at most 500 characters") {
-        validateDecision(approval.copy(note = "a".repeat(500)), at).isRight() shouldBe true
+        validateDecision(approval.copy(note = "a".repeat(500)), at).shouldBeRight()
         validateDecision(approval.copy(note = "a".repeat(501)), at) shouldBe errors(FieldError(NOTE, TOO_LONG))
     }
 
+    test("a note can have several lines") {
+        validateDecision(approval.copy(note = "Første linje.\nAndre linje."), at).map { it.note } shouldBe
+            note("Første linje.\nAndre linje.").right()
+    }
+
+    test("a note cannot have control characters, which no keyboard types and the database will not store") {
+        listOf("a\u0000b", "bell\u0007", "escape\u001B[0m").forEach { text ->
+            validateDecision(approval.copy(note = text), at) shouldBe errors(FieldError(NOTE, INVALID_FORMAT))
+        }
+    }
+
     test("approving needs no note") {
-        validateDecision(approval.copy(note = ""), at).isRight() shouldBe true
+        validateDecision(approval.copy(note = ""), at).shouldBeRight()
     }
 
     test("rejecting needs a note that explains why") {
@@ -90,7 +101,7 @@ class DecisionValidationTest : FunSpec({
     test("approved expenses cannot be negative") {
         validateDecision(approval.copy(decision = DecisionChoiceDraft.Approve(-1)), at) shouldBe
             errors(FieldError(APPROVED_EXPENSES, MUST_NOT_BE_NEGATIVE))
-        validateDecision(approval.copy(decision = DecisionChoiceDraft.Approve(0)), at).isRight() shouldBe true
+        validateDecision(approval.copy(decision = DecisionChoiceDraft.Approve(0)), at).shouldBeRight()
     }
 
     test("every problem is reported at once, in field order") {
