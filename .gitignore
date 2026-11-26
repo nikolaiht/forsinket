@@ -8,7 +8,8 @@ frontend/review/elm-stuff/
 frontend/dist/
 
 # Local environment
-.env
+.env*
+.vercel
 .DS_Store
 .idea/
 *.iml
