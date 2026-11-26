@@ -14,6 +14,7 @@ import io.github.nikolaiht.forsinket.domain.StatusName
 import io.github.nikolaiht.forsinket.domain.replay
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -22,8 +23,9 @@ class PostgresClaimStoreTest : FunSpec({
     val dataSource = PostgresTestDatabase.dataSource
     val store = PostgresClaimStore(dataSource)
     val fixtures = ContractFixtures
+    val noon = Instant.parse("2026-11-26T12:00:00Z")
 
-    beforeTest { store.reset() }
+    beforeTest { PostgresTestDatabase.empty() }
 
     fun ClaimSnapshot.eventsAfter(version: Int) =
         events.drop(version).toNonEmptyListOrNull() ?: error("no events after version $version")
@@ -94,7 +96,7 @@ class PostgresClaimStoreTest : FunSpec({
             }
 
             val loser = CompletableFuture.supplyAsync { store.append(id, expectedVersion = 0, payout, summary) }
-            awaitBlockedWriter()
+            awaitBlocked(sessions = 1)
             winner.commit()
 
             loser.get(10, TimeUnit.SECONDS) shouldBe VersionConflict(currentVersion = 1).left()
@@ -129,15 +131,52 @@ class PostgresClaimStoreTest : FunSpec({
         store.summaries(null).single().status shouldBe StatusName.APPROVED
     }
 
-    test("count and reset") {
+    test("a reset removes every claim") {
         append(fixtures.approvedAutomatically)
         append(fixtures.awaitingReview)
         store.count() shouldBe 2
 
-        store.reset()
+        store.reset(now = noon, notSince = noon) shouldBe true
 
         store.count() shouldBe 0
         store.load(fixtures.idA) shouldBe emptyList()
+    }
+
+    test("a reset that has already been done since the given time is not done again") {
+        store.reset(now = noon, notSince = noon)
+        append(fixtures.approvedAutomatically)
+
+        store.reset(now = noon.plusSeconds(600), notSince = noon.minusSeconds(3000)) shouldBe false
+
+        store.count() shouldBe 1
+    }
+
+    test("a reset is done again when the last one was at the given time or before it") {
+        store.reset(now = noon, notSince = noon)
+        append(fixtures.approvedAutomatically)
+
+        store.reset(now = noon.plusSeconds(3600), notSince = noon) shouldBe true
+
+        store.count() shouldBe 0
+    }
+
+    test("of two resets asked for at the same moment, only one is done") {
+        val results = dataSource.connection.use { holder ->
+            // Someone else holds the lock the resets queue up behind, so both
+            // are waiting before either has looked at when the last one was.
+            holder.autoCommit = false
+            holder.createStatement().use { it.execute("LOCK TABLE demo_resets IN EXCLUSIVE MODE") }
+
+            val resets = List(2) {
+                CompletableFuture.supplyAsync { store.reset(now = noon, notSince = noon.minusSeconds(3600)) }
+            }
+            awaitBlocked(sessions = 2)
+            holder.commit()
+
+            resets.map { it.get(10, TimeUnit.SECONDS) }
+        }
+
+        results.sorted() shouldBe listOf(false, true)
     }
 
     test("migrating a database that is already migrated changes nothing") {
@@ -149,8 +188,8 @@ class PostgresClaimStoreTest : FunSpec({
     }
 }) {
     companion object {
-        /** Waits until some session in the database is blocked on a lock held by another. */
-        private fun awaitBlockedWriter() {
+        /** Waits until this many sessions in the database are blocked on a lock held by another. */
+        private fun awaitBlocked(sessions: Int) {
             val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10)
             PostgresTestDatabase.dataSource.connection.use { connection ->
                 connection.prepareStatement("SELECT count(*) FROM pg_locks WHERE NOT granted").use { statement ->
@@ -159,12 +198,12 @@ class PostgresClaimStoreTest : FunSpec({
                             it.next()
                             it.getInt(1)
                         }
-                        if (blocked > 0) return
+                        if (blocked >= sessions) return
                         Thread.sleep(20)
                     }
                 }
             }
-            error("no writer became blocked within ten seconds")
+            error("fewer than $sessions sessions became blocked within ten seconds")
         }
     }
 }

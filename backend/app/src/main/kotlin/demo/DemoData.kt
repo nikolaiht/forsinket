@@ -20,16 +20,46 @@ import io.github.nikolaiht.forsinket.domain.inOslo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.Clock
-import java.time.Duration
 import java.time.Instant
 import java.time.ZoneOffset
 import java.util.UUID
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.toJavaDuration
 
-/** Seeds the demo claims at start-up, unless the store already has claims in it. */
-suspend fun seedIfEmpty(store: ClaimStore, traffic: TrafficData, rules: RuleSet, now: Instant) {
-    if (withContext(Dispatchers.IO) { store.count() } == 0) {
+/**
+ * Gets the demo ready when the service starts.
+ *
+ * A demo that resets starts over here if the last time was [resetEvery] ago or
+ * more. On a host that stops the service between visits this is the only
+ * moment it can happen, because a timer in a stopped service does not fire.
+ * Either way, a demo with no claims in it gets its seed claims.
+ */
+suspend fun prepareDemo(store: ClaimStore, traffic: TrafficData, rules: RuleSet, now: Instant, resetEvery: Duration?) {
+    val startedOver = resetEvery != null && startOverIfDue(store, traffic, rules, now, resetEvery)
+    if (!startedOver && withContext(Dispatchers.IO) { store.count() } == 0) {
         seedDemoData(store, traffic, rules, now)
     }
+}
+
+/**
+ * Starts the demo over from its seed data, if the last time was [interval] ago
+ * or more. The store decides, so two instances of the service that ask at the
+ * same moment do not both empty it and seed it.
+ *
+ * @return whether the demo started over
+ */
+suspend fun startOverIfDue(
+    store: ClaimStore,
+    traffic: TrafficData,
+    rules: RuleSet,
+    now: Instant,
+    interval: Duration,
+): Boolean {
+    val emptied = withContext(Dispatchers.IO) { store.reset(now, notSince = now.minus(interval.toJavaDuration())) }
+    // The seed claims go in beside whatever has arrived since the store was emptied.
+    if (emptied) seedDemoData(store, traffic, rules, now)
+    return emptied
 }
 
 /**
@@ -62,7 +92,7 @@ suspend fun seedDemoData(store: ClaimStore, traffic: TrafficData, rules: RuleSet
             store = store,
             traffic = traffic,
             rules = rules,
-            clock = Clock.fixed(now.minus(Duration.ofHours(hoursAgo)), ZoneOffset.UTC),
+            clock = Clock.fixed(now.minus(hoursAgo.hours.toJavaDuration()), ZoneOffset.UTC),
             newId = { demoClaimId(number) },
             maxClaims = null,
         )

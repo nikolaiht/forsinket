@@ -16,4 +16,11 @@ object PostgresTestDatabase {
         container.start()
         dataSource(container.jdbcUrl, container.username, container.password).also(::migrate)
     }
+
+    /** Removes everything the tests have stored, so that a test starts with an empty database. */
+    fun empty() {
+        dataSource.connection.use { connection ->
+            connection.createStatement().use { it.execute("TRUNCATE claim_events, claim_summaries, demo_resets") }
+        }
+    }
 }

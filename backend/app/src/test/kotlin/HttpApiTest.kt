@@ -89,7 +89,7 @@ class HttpApiTest : FunSpec({
         Files.writeString(directory.resolve("style.css"), "body { margin: 0 }")
     }
 
-    beforeTest { store.reset() }
+    beforeTest { PostgresTestDatabase.empty() }
 
     /** Runs [test] against a fresh service whose new claims get [ids], in order. */
     suspend fun withApi(ids: List<ClaimId> = emptyList(), maxClaims: Int? = null, test: suspend Api.() -> Unit) {

@@ -6,6 +6,7 @@ import io.github.nikolaiht.forsinket.app.ClaimSummary
 import io.github.nikolaiht.forsinket.domain.ClaimEvent
 import io.github.nikolaiht.forsinket.domain.ClaimId
 import io.github.nikolaiht.forsinket.domain.StatusName
+import java.time.Instant
 
 /** The claim has moved on since the writer read it. [currentVersion] is where it is now. */
 data class VersionConflict(val currentVersion: Int)
@@ -38,6 +39,13 @@ interface ClaimStore {
 
     fun count(): Int
 
-    /** Removes every claim. For the demo, which starts over from its seed data. */
-    fun reset()
+    /**
+     * Removes every claim and notes that it was done at [now], unless it was
+     * last done after [notSince]. For the demo, which starts over from its
+     * seed data now and then. Of two callers at the same moment only one is
+     * told true, so only one of them goes on to seed.
+     *
+     * @return whether the claims were removed
+     */
+    fun reset(now: Instant, notSince: Instant): Boolean
 }

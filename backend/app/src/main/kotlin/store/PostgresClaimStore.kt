@@ -21,6 +21,7 @@ import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.SQLException
 import java.sql.Types
+import java.time.Instant
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
@@ -95,11 +96,36 @@ class PostgresClaimStore(private val dataSource: DataSource) : ClaimStore {
             }
         }
 
-    override fun reset() {
-        dataSource.connection.use { connection ->
-            connection.prepareStatement("TRUNCATE claim_events, claim_summaries").use { it.executeUpdate() }
+    override fun reset(now: Instant, notSince: Instant): Boolean =
+        dataSource.transaction { connection ->
+            // One reset at a time. A second caller waits here until the first
+            // has committed, and then sees that it has been done.
+            connection.execute("LOCK TABLE demo_resets IN EXCLUSIVE MODE")
+            val last = connection.lastReset()
+            if (last != null && last.isAfter(notSince)) {
+                false
+            } else {
+                connection.execute("TRUNCATE claim_events, claim_summaries")
+                connection.execute("DELETE FROM demo_resets")
+                connection.prepareStatement("INSERT INTO demo_resets (reset_at) VALUES (?)").use { statement ->
+                    statement.setObject(1, now.atOffset(ZoneOffset.UTC))
+                    statement.executeUpdate()
+                }
+                true
+            }
         }
+
+    private fun Connection.execute(sql: String) {
+        createStatement().use { it.execute(sql) }
     }
+
+    private fun Connection.lastReset(): Instant? =
+        prepareStatement("SELECT max(reset_at) FROM demo_resets").use { statement ->
+            statement.executeQuery().use { rows ->
+                rows.next()
+                rows.getObject(1, OffsetDateTime::class.java)?.toInstant()
+            }
+        }
 
     private fun Connection.currentVersion(id: ClaimId): Int =
         prepareStatement("SELECT COALESCE(max(version), 0) FROM claim_events WHERE claim_id = ?").use { statement ->

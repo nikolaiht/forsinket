@@ -1,8 +1,8 @@
 package io.github.nikolaiht.forsinket.app
 
 import arrow.core.toNonEmptyListOrNull
+import io.github.nikolaiht.forsinket.app.demo.prepareDemo
 import io.github.nikolaiht.forsinket.app.demo.seedDemoData
-import io.github.nikolaiht.forsinket.app.demo.seedIfEmpty
 import io.github.nikolaiht.forsinket.app.store.PostgresClaimStore
 import io.github.nikolaiht.forsinket.app.traffic.SyntheticTrafficData
 import io.github.nikolaiht.forsinket.domain.ClaimState
@@ -13,14 +13,24 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.shouldBe
 import java.time.Instant
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
 
 class DemoDataTest : FunSpec({
     val store = PostgresClaimStore(PostgresTestDatabase.dataSource)
     val now = Instant.parse("2026-11-26T10:00:00Z")
 
-    beforeTest { store.reset() }
+    beforeTest { PostgresTestDatabase.empty() }
 
     suspend fun seed(at: Instant = now) = seedDemoData(store, SyntheticTrafficData, RulesV1, at)
+
+    suspend fun startUp(at: Instant, resetEvery: Duration?) =
+        prepareDemo(store, SyntheticTrafficData, RulesV1, at, resetEvery)
+
+    fun someoneAddsAClaim() {
+        val theirs = ContractFixtures.approvedAutomatically
+        store.append(theirs.id, 0, theirs.events.toNonEmptyListOrNull()!!, summarize(theirs))
+    }
 
     test("the demo starts with claims in every status a claim can rest in") {
         seed()
@@ -40,18 +50,46 @@ class DemoDataTest : FunSpec({
         }
     }
 
-    test("at start-up, a store that already has claims is left alone") {
-        seedIfEmpty(store, SyntheticTrafficData, RulesV1, now)
+    test("at start-up, a demo that never resets is seeded once and then left alone") {
+        startUp(now, resetEvery = null)
         val first = store.summaries(null)
+        first.size shouldBe 6
 
-        seedIfEmpty(store, SyntheticTrafficData, RulesV1, now.plusSeconds(3600))
+        startUp(now.plusSeconds(86_400), resetEvery = null)
 
         store.summaries(null) shouldBe first
     }
 
+    test("at start-up, a demo that resets starts over when the last time was that long ago") {
+        startUp(now, resetEvery = 60.minutes)
+        someoneAddsAClaim()
+        store.count() shouldBe 7
+
+        startUp(now.plusSeconds(3600), resetEvery = 60.minutes)
+
+        store.count() shouldBe 6
+        store.load(ContractFixtures.idA) shouldBe emptyList()
+    }
+
+    test("at start-up, a demo that started over more recently than that is left as it is") {
+        startUp(now, resetEvery = 60.minutes)
+        someoneAddsAClaim()
+
+        startUp(now.plusSeconds(3599), resetEvery = 60.minutes)
+
+        store.count() shouldBe 7
+    }
+
+    test("at start-up, a demo that was emptied but never got its claims gets them") {
+        store.reset(now = now, notSince = now)
+
+        startUp(now.plusSeconds(600), resetEvery = 60.minutes)
+
+        store.count() shouldBe 6
+    }
+
     test("after a reset the demo claims are seeded even if someone got a claim in first") {
-        val someoneElses = ContractFixtures.approvedAutomatically
-        store.append(someoneElses.id, 0, someoneElses.events.toNonEmptyListOrNull()!!, summarize(someoneElses))
+        someoneAddsAClaim()
 
         seed()
 
@@ -69,7 +107,7 @@ class DemoDataTest : FunSpec({
 
     test("the demo can be seeded on every day of the week, whatever the traffic was") {
         (0L..6L).forEach { day ->
-            store.reset()
+            PostgresTestDatabase.empty()
 
             seed(now.plusSeconds(day * 86_400))
 

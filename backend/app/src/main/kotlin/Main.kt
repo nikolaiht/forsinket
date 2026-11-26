@@ -1,9 +1,9 @@
 package io.github.nikolaiht.forsinket.app
 
 import arrow.core.getOrElse
+import io.github.nikolaiht.forsinket.app.demo.prepareDemo
 import io.github.nikolaiht.forsinket.app.demo.resetRepeatedly
-import io.github.nikolaiht.forsinket.app.demo.seedDemoData
-import io.github.nikolaiht.forsinket.app.demo.seedIfEmpty
+import io.github.nikolaiht.forsinket.app.demo.startOverIfDue
 import io.github.nikolaiht.forsinket.app.http.module
 import io.github.nikolaiht.forsinket.app.store.PostgresClaimStore
 import io.github.nikolaiht.forsinket.app.store.dataSource
@@ -14,10 +14,8 @@ import io.github.nikolaiht.forsinket.domain.RulesV1
 import io.ktor.server.application.log
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import java.time.Clock
 import java.util.UUID
 import kotlin.system.exitProcess
@@ -48,8 +46,8 @@ fun main() {
         maxClaims = config.demo?.maxClaims,
     )
 
-    if (config.demo != null) {
-        runBlocking { seedIfEmpty(store, traffic, rules, clock.instant()) }
+    config.demo?.let { demo ->
+        runBlocking { prepareDemo(store, traffic, rules, clock.instant(), demo.resetEvery) }
     }
 
     embeddedServer(Netty, port = config.port) {
@@ -61,10 +59,7 @@ fun main() {
                     interval,
                     onFailure = { log.error("Resetting the demo failed. It will be tried again.", it) },
                 ) {
-                    // After a reset the seed claims go in whatever else has
-                    // arrived in the meantime.
-                    withContext(Dispatchers.IO) { store.reset() }
-                    seedDemoData(store, traffic, rules, clock.instant())
+                    startOverIfDue(store, traffic, rules, clock.instant(), interval)
                 }
             }
         }

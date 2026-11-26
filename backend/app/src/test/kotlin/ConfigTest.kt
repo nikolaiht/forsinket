@@ -39,6 +39,48 @@ class ConfigTest : FunSpec({
             ).right()
     }
 
+    test("a database address of the kind a host hands out carries the user and the password") {
+        val env = mapOf("DATABASE_URL" to "postgresql://forsinket:s3cret@db.example.com/forsinket?sslmode=require")
+
+        configFrom(env).map { it.database } shouldBe
+            DatabaseConfig("jdbc:postgresql://db.example.com/forsinket?sslmode=require", "forsinket", "s3cret").right()
+    }
+
+    test("such an address can have a port, and characters written with percent signs") {
+        val env = mapOf("DATABASE_URL" to "postgres://for%40sinket:p%2Bss%3Aw+rd@db.example.com:6543/forsinket")
+
+        configFrom(env).map { it.database } shouldBe
+            DatabaseConfig("jdbc:postgresql://db.example.com:6543/forsinket", "for@sinket", "p+ss:w+rd").right()
+    }
+
+    test("the direct connection is used when a host offers one beside a pooled one") {
+        val env = mapOf(
+            "DATABASE_URL" to "postgresql://forsinket:s3cret@pooler.example.com/forsinket",
+            "DATABASE_URL_UNPOOLED" to "postgresql://forsinket:s3cret@db.example.com/forsinket",
+        )
+
+        configFrom(env).map { it.database.url } shouldBe "jdbc:postgresql://db.example.com/forsinket".right()
+    }
+
+    test("a database address that cannot be used is a problem, and the problem does not repeat the password") {
+        val unusable = listOf(
+            "mysql://forsinket:s3cret@db.example.com/forsinket",
+            "postgresql://forsinket:s3cret@db.example.com",
+            "postgresql://forsinket@db.example.com/forsinket",
+            "postgresql://db.example.com/forsinket",
+            "postgresql://forsinket:s3cret@/forsinket",
+            "postgresql://forsinket:s3cret@db.example.com/for sinket",
+        )
+
+        unusable.forEach { address ->
+            configFrom(mapOf("DATABASE_URL" to address)) shouldBe
+                nonEmptyListOf(
+                    "DATABASE_URL must be a jdbc:postgresql: address, " +
+                        "or a postgresql: address with the user and the password in it",
+                ).left()
+        }
+    }
+
     test("an empty WEB_ROOT means no web app, not the working directory") {
         configFrom(database + ("WEB_ROOT" to "  ")).map { it.webRoot } shouldBe null.right()
     }

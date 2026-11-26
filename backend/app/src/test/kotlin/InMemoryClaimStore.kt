@@ -9,11 +9,13 @@ import io.github.nikolaiht.forsinket.app.store.VersionConflict
 import io.github.nikolaiht.forsinket.domain.ClaimEvent
 import io.github.nikolaiht.forsinket.domain.ClaimId
 import io.github.nikolaiht.forsinket.domain.StatusName
+import java.time.Instant
 
 /** A store that keeps everything in memory, for tests of the service that need no database. */
 class InMemoryClaimStore : ClaimStore {
     private val events = mutableMapOf<ClaimId, List<ClaimEvent>>()
     private val summaries = mutableMapOf<ClaimId, ClaimSummary>()
+    private var lastReset: Instant? = null
 
     override fun load(id: ClaimId): List<ClaimEvent> = events[id].orEmpty()
 
@@ -35,8 +37,11 @@ class InMemoryClaimStore : ClaimStore {
 
     override fun count(): Int = summaries.size
 
-    override fun reset() {
+    override fun reset(now: Instant, notSince: Instant): Boolean {
+        if (lastReset?.isAfter(notSince) == true) return false
         events.clear()
         summaries.clear()
+        lastReset = now
+        return true
     }
 }

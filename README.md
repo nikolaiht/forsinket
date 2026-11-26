@@ -123,7 +123,7 @@ make format      # let ktlint and elm-format rewrite the code the way the checks
 make smoke       # walk two claims through the running app
 ```
 
-The service is configured with environment variables: `PORT`, `DATABASE_URL`, `DATABASE_USER`, `DATABASE_PASSWORD`, `WEB_ROOT`, and for an open demo `DEMO_MODE`, `DEMO_MAX_CLAIMS` and `DEMO_RESET_MINUTES`. The database password in `docker-compose.yml` and the `Makefile` is for the local setup only.
+The service is configured with environment variables: `PORT`, `DATABASE_URL`, `DATABASE_USER`, `DATABASE_PASSWORD`, `WEB_ROOT`, and for an open demo `DEMO_MODE`, `DEMO_MAX_CLAIMS` and `DEMO_RESET_MINUTES`. `DATABASE_URL` can also be one `postgresql://user:password@host/database` address, the kind a hosting platform hands out, and then the other two are not needed. The database password in `docker-compose.yml` and the `Makefile` is for the local setup only.
 
 ## License
 

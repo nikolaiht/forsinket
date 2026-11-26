@@ -68,7 +68,7 @@ class ClaimServicePropertyTest : FunSpec({
     val store = PostgresClaimStore(PostgresTestDatabase.dataSource)
     val clock = TestClock(Instant.parse("2026-11-21T09:15:00Z"))
 
-    beforeTest { store.reset() }
+    beforeTest { PostgresTestDatabase.empty() }
 
     test("whatever is done to a claim, its summary is what its events add up to") {
         checkAll(60, claimDrafts, Arb.list(actions, 0..5)) { draft, followUps ->
