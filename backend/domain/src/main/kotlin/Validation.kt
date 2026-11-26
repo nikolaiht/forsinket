@@ -8,7 +8,7 @@ import arrow.core.raise.either
 import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
 import arrow.core.raise.zipOrAccumulate
-import java.time.LocalDate
+import java.time.LocalDateTime
 
 enum class Field {
     DEPARTURE_ID,
@@ -61,17 +61,18 @@ data class ExpensesDraft(val amountOre: Long, val kind: String)
  *
  * [departure] is what the traffic system returned for the draft's departure
  * id, or null when it knows no such departure. The lookup itself is I/O and
- * belongs to the caller.
+ * belongs to the caller. So does reading the clock: [now] is the local time
+ * where the trains run.
  */
 fun validateClaim(
     rules: RuleSet,
     draft: ClaimDraft,
     departure: Departure?,
-    today: LocalDate,
+    now: LocalDateTime,
 ): EitherNel<FieldError, ClaimDetails> =
     either {
         zipOrAccumulate(
-            { departureThatHasRun(departure, today) },
+            { departureThatWasDue(departure, now) },
             { ticket(rules, draft.ticket) },
             { draft.expenses?.let { withNel { expenses(rules, it) } } },
         ) { knownDeparture, ticket, expenses ->
@@ -79,9 +80,9 @@ fun validateClaim(
         }
     }
 
-private fun Raise<FieldError>.departureThatHasRun(departure: Departure?, today: LocalDate): Departure {
+private fun Raise<FieldError>.departureThatWasDue(departure: Departure?, now: LocalDateTime): Departure {
     ensureNotNull(departure) { FieldError(Field.DEPARTURE_ID, ErrorCode.UNKNOWN_DEPARTURE) }
-    ensure(!departure.date.isAfter(today)) { FieldError(Field.DEPARTURE_ID, ErrorCode.DEPARTURE_IN_FUTURE) }
+    ensure(departure.wasDueBy(now)) { FieldError(Field.DEPARTURE_ID, ErrorCode.DEPARTURE_IN_FUTURE) }
     return departure
 }
 

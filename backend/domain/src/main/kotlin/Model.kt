@@ -1,6 +1,7 @@
 package io.github.nikolaiht.forsinket.domain
 
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 sealed interface Ticket {
@@ -39,7 +40,15 @@ data class Departure(
     val destination: String,
     val scheduledDeparture: LocalTime,
     val outcome: Outcome,
-)
+) {
+    /**
+     * Whether the departure was due to leave at or before [now], in the local
+     * time the timetable is written in. Until then there is nothing to claim
+     * for: a train cannot be late before it was meant to go.
+     */
+    fun wasDueBy(now: LocalDateTime): Boolean =
+        !date.atTime(scheduledDeparture).isAfter(now)
+}
 
 /**
  * A claim that has passed validation. It carries the departure as it was

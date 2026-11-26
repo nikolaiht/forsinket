@@ -428,6 +428,27 @@ class HttpApiTest : FunSpec({
             }
         }
 
+        test("a departure is listed once it was due to leave, not before") {
+            withApi {
+                clock.now = Instant.parse("2026-11-20T12:00:00Z") // 13:00 in Oslo
+
+                get("/api/departures?date=2026-11-20").json().jsonArray.map { it.field("trainNumber").jsonPrimitive.content } shouldBe
+                    listOf("FB11", "FB12", "FB13", "FB14")
+            }
+        }
+
+        test("a claim for a train that has not left yet is turned down") {
+            withApi {
+                clock.now = Instant.parse("2026-11-20T12:00:00Z") // 13:00 in Oslo, FB16 leaves at 16:42
+
+                val response = postExample("/api/claims", "claim-request.single.json")
+
+                response.status shouldBe HttpStatusCode.UnprocessableEntity
+                response.json().field("errors").jsonArray.map { it.field("code").jsonPrimitive.content } shouldBe
+                    listOf("departure_in_future")
+            }
+        }
+
         test("a missing or unreadable date is a malformed request") {
             withApi {
                 listOf("/api/departures", "/api/departures?date=20.11.2026", "/api/departures?date=").forEach { path ->

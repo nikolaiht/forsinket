@@ -1,4 +1,4 @@
-module FieldError exposing (Field(..), FieldError, Problem(..), decoder, for)
+module FieldError exposing (Field(..), FieldError, Problem(..), decoder, for, unplaced)
 
 {-| What is wrong with one field of a form.
 
@@ -52,6 +52,23 @@ for : Field -> List FieldError -> List Problem
 for field errors =
     List.filter (\error -> error.field == field) errors
         |> List.map .problem
+
+
+{-| The errors on fields this app does not know, with the name the service
+gave the field. A form has no input to show them next to, so it lists them.
+-}
+unplaced : List FieldError -> List ( String, Problem )
+unplaced errors =
+    List.filterMap
+        (\error ->
+            case error.field of
+                OtherField path ->
+                    Just ( path, error.problem )
+
+                _ ->
+                    Nothing
+        )
+        errors
 
 
 {-| An error as the service sends it: the path of the field in the request, and

@@ -90,7 +90,7 @@ class ContractTest : FunSpec({
             val draft = claimRequest("claim-request.single.json")
 
             draft shouldBe ClaimDraft("2026-11-20-FB16", TicketDraft.Single(34900), expenses = null)
-            validateClaim(RulesV1, draft, fixtures.claimA.departure, submittedOn) shouldBe fixtures.claimA.right()
+            validateClaim(RulesV1, draft, fixtures.claimA.departure, submittedOn.atStartOfDay()) shouldBe fixtures.claimA.right()
         }
 
         test("a claim for a period ticket with expenses") {
@@ -98,7 +98,7 @@ class ContractTest : FunSpec({
 
             draft shouldBe
                 ClaimDraft("2026-11-20-FB14", TicketDraft.Period(84900, 30), ExpensesDraft(62000, "taxi"))
-            validateClaim(RulesV1, draft, fixtures.claimB.departure, submittedOn) shouldBe fixtures.claimB.right()
+            validateClaim(RulesV1, draft, fixtures.claimB.departure, submittedOn.atStartOfDay()) shouldBe fixtures.claimB.right()
         }
 
         test("a claim without the expenses field means no expenses") {

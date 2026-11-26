@@ -16,14 +16,17 @@ import io.github.nikolaiht.forsinket.domain.Field.TICKET_PRICE
 import io.github.nikolaiht.forsinket.domain.Field.TICKET_VALIDITY_DAYS
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import java.time.LocalDateTime
 
 class ValidationTest : FunSpec({
-    val today = exampleDate.plusDays(1)
+    // Noon, the day after the departure in the fixtures (which leaves at 16:42).
+    val now = exampleDate.plusDays(1).atTime(12, 0)
+    val today = now.toLocalDate()
     val departure = departure(delayMinutes = 61)
     val single = ClaimDraft(departure.id.value, TicketDraft.Single(34900), expenses = null)
 
-    fun validate(draft: ClaimDraft, found: Departure? = departure) =
-        validateClaim(RulesV1, draft, found, today)
+    fun validate(draft: ClaimDraft, found: Departure? = departure, at: LocalDateTime = now) =
+        validateClaim(RulesV1, draft, found, at)
 
     test("a valid draft becomes claim details") {
         validate(single) shouldBe
@@ -58,8 +61,16 @@ class ValidationTest : FunSpec({
             nonEmptyListOf(FieldError(DEPARTURE_ID, DEPARTURE_IN_FUTURE)).left()
     }
 
-    test("a departure today is accepted") {
-        validate(single, found = departure(delayMinutes = 61, date = today)).isRight() shouldBe true
+    test("a departure later today has not run yet either") {
+        validate(single, found = departure(delayMinutes = 61, date = today)) shouldBe
+            nonEmptyListOf(FieldError(DEPARTURE_ID, DEPARTURE_IN_FUTURE)).left()
+    }
+
+    test("a departure is claimable from the minute it was due to leave") {
+        val leavesToday = departure(delayMinutes = 61, date = today)
+
+        validate(single, found = leavesToday, at = today.atTime(16, 41)).isLeft() shouldBe true
+        validate(single, found = leavesToday, at = today.atTime(16, 42)).isRight() shouldBe true
     }
 
     test("the ticket price is capped at 20 000 kr") {

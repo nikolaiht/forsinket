@@ -38,7 +38,7 @@ type Error
     | Timeout
     | NotFound
     | Invalid (List FieldError)
-    | VersionConflict Int
+    | VersionConflict
     | InvalidTransition
     | DemoLimitReached
     | Unexpected String
@@ -96,7 +96,7 @@ errorDecoder =
                         Decode.succeed NotFound
 
                     "version_conflict" ->
-                        Decode.map VersionConflict (Decode.field "currentVersion" Decode.int)
+                        Decode.succeed VersionConflict
 
                     "invalid_transition" ->
                         Decode.succeed InvalidTransition

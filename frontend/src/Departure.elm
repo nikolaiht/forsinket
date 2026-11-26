@@ -1,4 +1,4 @@
-module Departure exposing (Departure, Id, Outcome(..), decoder, encodeId, idDecoder, idToString, outcomeDecoder)
+module Departure exposing (Departure, Id, Outcome(..), decoder, encodeId, idDecoder, outcomeDecoder)
 
 {-| A departure, and what happened to it.
 -}
@@ -25,11 +25,6 @@ decoded from an answer from the service, which is the only way to get one.
 -}
 type Id
     = Id String
-
-
-idToString : Id -> String
-idToString (Id id) =
-    id
 
 
 idDecoder : Decoder Id

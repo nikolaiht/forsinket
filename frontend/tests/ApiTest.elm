@@ -97,7 +97,7 @@ suite =
             , test "someone else changed the claim first" <|
                 \_ ->
                     read (badStatus 409 Examples.errorVersionConflict)
-                        |> Expect.equal (Err (VersionConflict 3))
+                        |> Expect.equal (Err VersionConflict)
             , test "the claim's status does not allow it" <|
                 \_ ->
                     read (badStatus 409 Examples.errorInvalidTransition)

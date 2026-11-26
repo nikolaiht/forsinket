@@ -49,6 +49,8 @@ config =
     , NoPrematureLetComputation.rule
     , NoUnused.CustomTypeConstructors.rule []
     , NoUnused.CustomTypeConstructorArgs.rule
+        -- Test helpers hold values that are only ever compared, never taken apart.
+        |> Rule.ignoreErrorsForDirectories [ "tests/" ]
     , NoUnused.Dependencies.rule
     , NoUnused.Exports.rule
     , NoUnused.Parameters.rule

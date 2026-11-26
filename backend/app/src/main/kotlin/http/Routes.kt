@@ -48,9 +48,9 @@ fun Route.api(service: ClaimService, traffic: TrafficData, rules: RuleSet, clock
 
     get("/departures") {
         call.respondOr(call.dateParameter("date")) { date ->
-            // A day that has not come yet has no outcomes to claim for.
-            val today = LocalDate.now(clock.withZone(OSLO))
-            val departures = if (date.isAfter(today)) emptyList() else traffic.departuresOn(date)
+            // Only what was due to leave by now: there is nothing to claim for before that.
+            val now = clock.instant().atZone(OSLO).toLocalDateTime()
+            val departures = traffic.departuresOn(date).filter { it.wasDueBy(now) }
             call.respond(departures.map { it.toDto() })
         }
     }

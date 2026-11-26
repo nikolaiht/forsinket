@@ -2,7 +2,7 @@ module Fixtures exposing
     ( approvedAutomatically, approvedByOfficer, awaitingReview, paidOut, rejectedByOfficer, rejectedByRules
     , calculationA, calculationB
     , departures, fb14, fb16, fb17
-    , idA, idB, idC, idFrom
+    , idA, idB, idC
     , period849, single349, taxi620
     , rules
     , time
@@ -15,7 +15,7 @@ descriptions of the same thing: the JSON file and this module.
 @docs approvedAutomatically, approvedByOfficer, awaitingReview, paidOut, rejectedByOfficer, rejectedByRules
 @docs calculationA, calculationB
 @docs departures, fb14, fb16, fb17
-@docs idA, idB, idC, idFrom
+@docs idA, idB, idC
 @docs period849, single349, taxi620
 @docs rules
 @docs time

@@ -133,7 +133,7 @@ class ClaimService(
 
     private suspend fun validated(draft: ClaimDraft, now: Instant): Either<ApiError, ClaimDetails> {
         val departure = io { traffic.find(DepartureId(draft.departureId)) }
-        return validateClaim(rules, draft, departure, today = now.atZone(OSLO).toLocalDate())
+        return validateClaim(rules, draft, departure, now = now.atZone(OSLO).toLocalDateTime())
             .mapLeft(ApiError::Validation)
     }
 
