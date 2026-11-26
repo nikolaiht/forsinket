@@ -1,0 +1,23 @@
+{
+  "type": "eligible",
+  "calculation": {
+    "ruleSetVersion": "v1",
+    "ticketValue": {
+      "type": "full_price",
+      "value": 34900
+    },
+    "outcome": {
+      "type": "ran",
+      "delayMinutes": 61
+    },
+    "percent": 50,
+    "ticketCompensation": 17450,
+    "expenses": {
+      "type": "none_claimed"
+    },
+    "total": 17450
+  },
+  "handling": {
+    "type": "auto_approve"
+  }
+}

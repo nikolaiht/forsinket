@@ -1,0 +1,4 @@
+{
+  "type": "malformed_request",
+  "detail": "The request body could not be read as the JSON this endpoint expects."
+}

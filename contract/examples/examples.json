@@ -1,0 +1,128 @@
+[
+  {
+    "ticket": {
+      "type": "single",
+      "price": 34900
+    },
+    "expenses": null,
+    "outcome": {
+      "type": "ran",
+      "delayMinutes": 45
+    },
+    "assessment": {
+      "type": "eligible",
+      "calculation": {
+        "ruleSetVersion": "v1",
+        "ticketValue": {
+          "type": "full_price",
+          "value": 34900
+        },
+        "outcome": {
+          "type": "ran",
+          "delayMinutes": 45
+        },
+        "percent": 25,
+        "ticketCompensation": 8725,
+        "expenses": {
+          "type": "none_claimed"
+        },
+        "total": 8725
+      },
+      "handling": {
+        "type": "auto_approve"
+      }
+    }
+  },
+  {
+    "ticket": {
+      "type": "single",
+      "price": 34900
+    },
+    "expenses": null,
+    "outcome": {
+      "type": "ran",
+      "delayMinutes": 75
+    },
+    "assessment": {
+      "type": "eligible",
+      "calculation": {
+        "ruleSetVersion": "v1",
+        "ticketValue": {
+          "type": "full_price",
+          "value": 34900
+        },
+        "outcome": {
+          "type": "ran",
+          "delayMinutes": 75
+        },
+        "percent": 50,
+        "ticketCompensation": 17450,
+        "expenses": {
+          "type": "none_claimed"
+        },
+        "total": 17450
+      },
+      "handling": {
+        "type": "auto_approve"
+      }
+    }
+  },
+  {
+    "ticket": {
+      "type": "period",
+      "price": 84900,
+      "validityDays": 30
+    },
+    "expenses": {
+      "amount": 62000,
+      "kind": "taxi"
+    },
+    "outcome": {
+      "type": "cancelled"
+    },
+    "assessment": {
+      "type": "eligible",
+      "calculation": {
+        "ruleSetVersion": "v1",
+        "ticketValue": {
+          "type": "per_day",
+          "price": 84900,
+          "days": 30,
+          "value": 2830
+        },
+        "outcome": {
+          "type": "cancelled"
+        },
+        "percent": 100,
+        "ticketCompensation": 2830,
+        "expenses": {
+          "type": "pending_review",
+          "claimed": 62000,
+          "maxCoverable": 62000
+        },
+        "total": 2830
+      },
+      "handling": {
+        "type": "manual_review",
+        "reasons": [
+          "expenses_claimed"
+        ]
+      }
+    }
+  },
+  {
+    "ticket": {
+      "type": "single",
+      "price": 34900
+    },
+    "expenses": null,
+    "outcome": {
+      "type": "ran",
+      "delayMinutes": 12
+    },
+    "assessment": {
+      "type": "not_eligible",
+      "reason": "delay_below_threshold"
+    }
+  }
+]

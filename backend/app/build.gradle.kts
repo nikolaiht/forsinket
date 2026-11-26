@@ -18,8 +18,19 @@ application {
 
 dependencies {
     implementation(project(":domain"))
+    implementation(libs.serialization.json)
+
+    testImplementation(testFixtures(project(":domain")))
+    testImplementation(libs.kotest.runner.junit5)
+    testImplementation(libs.kotest.assertions.core)
+    testImplementation(libs.kotest.property)
 }
+
+// The JSON examples both this service and the Elm app are tested against.
+val contractExamples = rootProject.layout.projectDirectory.dir("../contract/examples")
 
 tasks.test {
     useJUnitPlatform()
+    inputs.dir(contractExamples).withPropertyName("contractExamples")
+    systemProperty("contract.examples", contractExamples.asFile.absolutePath)
 }

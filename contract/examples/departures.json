@@ -1,0 +1,98 @@
+[
+  {
+    "id": "2026-11-20-FB11",
+    "date": "2026-11-20",
+    "trainNumber": "FB11",
+    "origin": "Fjordvik",
+    "destination": "Storhavn",
+    "scheduledDeparture": "06:12",
+    "outcome": {
+      "type": "ran",
+      "delayMinutes": 3
+    }
+  },
+  {
+    "id": "2026-11-20-FB12",
+    "date": "2026-11-20",
+    "trainNumber": "FB12",
+    "origin": "Storhavn",
+    "destination": "Fjordvik",
+    "scheduledDeparture": "07:42",
+    "outcome": {
+      "type": "ran",
+      "delayMinutes": 0
+    }
+  },
+  {
+    "id": "2026-11-20-FB13",
+    "date": "2026-11-20",
+    "trainNumber": "FB13",
+    "origin": "Fjordvik",
+    "destination": "Storhavn",
+    "scheduledDeparture": "09:12",
+    "outcome": {
+      "type": "ran",
+      "delayMinutes": 0
+    }
+  },
+  {
+    "id": "2026-11-20-FB14",
+    "date": "2026-11-20",
+    "trainNumber": "FB14",
+    "origin": "Storhavn",
+    "destination": "Fjordvik",
+    "scheduledDeparture": "12:12",
+    "outcome": {
+      "type": "ran",
+      "delayMinutes": 130
+    }
+  },
+  {
+    "id": "2026-11-20-FB15",
+    "date": "2026-11-20",
+    "trainNumber": "FB15",
+    "origin": "Fjordvik",
+    "destination": "Storhavn",
+    "scheduledDeparture": "15:12",
+    "outcome": {
+      "type": "ran",
+      "delayMinutes": 0
+    }
+  },
+  {
+    "id": "2026-11-20-FB16",
+    "date": "2026-11-20",
+    "trainNumber": "FB16",
+    "origin": "Storhavn",
+    "destination": "Fjordvik",
+    "scheduledDeparture": "16:42",
+    "outcome": {
+      "type": "ran",
+      "delayMinutes": 61
+    }
+  },
+  {
+    "id": "2026-11-20-FB17",
+    "date": "2026-11-20",
+    "trainNumber": "FB17",
+    "origin": "Fjordvik",
+    "destination": "Storhavn",
+    "scheduledDeparture": "18:12",
+    "outcome": {
+      "type": "ran",
+      "delayMinutes": 29
+    }
+  },
+  {
+    "id": "2026-11-20-FB18",
+    "date": "2026-11-20",
+    "trainNumber": "FB18",
+    "origin": "Storhavn",
+    "destination": "Fjordvik",
+    "scheduledDeparture": "21:12",
+    "outcome": {
+      "type": "ran",
+      "delayMinutes": 0
+    }
+  }
+]

@@ -1,0 +1,8 @@
+{
+  "departureId": "2026-11-20-FB16",
+  "ticket": {
+    "type": "single",
+    "price": 34900
+  },
+  "expenses": null
+}

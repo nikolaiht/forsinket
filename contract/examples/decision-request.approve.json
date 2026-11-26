@@ -1,0 +1,9 @@
+{
+  "expectedVersion": 2,
+  "officer": "KN",
+  "note": "Kvitteringen viser 500 kr.",
+  "decision": {
+    "type": "approve",
+    "approvedExpenses": 50000
+  }
+}

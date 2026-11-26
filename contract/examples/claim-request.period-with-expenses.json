@@ -1,0 +1,12 @@
+{
+  "departureId": "2026-11-20-FB14",
+  "ticket": {
+    "type": "period",
+    "price": 84900,
+    "validityDays": 30
+  },
+  "expenses": {
+    "amount": 62000,
+    "kind": "taxi"
+  }
+}

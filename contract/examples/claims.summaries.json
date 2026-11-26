@@ -1,0 +1,29 @@
+[
+  {
+    "id": "c81e4a2d-9f6b-4d3c-8e17-5a2b6c9d0e50",
+    "version": 2,
+    "status": "rejected",
+    "submittedAt": "2026-11-21T11:00:00Z",
+    "departureDate": "2026-11-20",
+    "trainNumber": "FB17",
+    "total": null
+  },
+  {
+    "id": "3f9d2b7a-1c4e-4f8b-a6d5-2e7c9b1f4d30",
+    "version": 2,
+    "status": "awaiting_review",
+    "submittedAt": "2026-11-21T10:00:00Z",
+    "departureDate": "2026-11-20",
+    "trainNumber": "FB14",
+    "total": 2830
+  },
+  {
+    "id": "0a6f3c1e-5b7d-4e2a-9c41-7d2f8b3e6a10",
+    "version": 2,
+    "status": "approved",
+    "submittedAt": "2026-11-21T09:15:00Z",
+    "departureDate": "2026-11-20",
+    "trainNumber": "FB16",
+    "total": 17450
+  }
+]

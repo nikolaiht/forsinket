@@ -1,0 +1,21 @@
+{
+  "type": "validation",
+  "errors": [
+    {
+      "field": "departureId",
+      "code": "unknown_departure"
+    },
+    {
+      "field": "ticket.price",
+      "code": "must_be_positive"
+    },
+    {
+      "field": "ticket.validityDays",
+      "code": "unsupported_validity"
+    },
+    {
+      "field": "expenses.kind",
+      "code": "unknown_value"
+    }
+  ]
+}

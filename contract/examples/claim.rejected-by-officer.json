@@ -1,0 +1,56 @@
+{
+  "id": "3f9d2b7a-1c4e-4f8b-a6d5-2e7c9b1f4d30",
+  "version": 3,
+  "submittedAt": "2026-11-21T10:00:00Z",
+  "departure": {
+    "id": "2026-11-20-FB14",
+    "date": "2026-11-20",
+    "trainNumber": "FB14",
+    "origin": "Storhavn",
+    "destination": "Fjordvik",
+    "scheduledDeparture": "12:12",
+    "outcome": {
+      "type": "ran",
+      "delayMinutes": 130
+    }
+  },
+  "ticket": {
+    "type": "period",
+    "price": 84900,
+    "validityDays": 30
+  },
+  "expenses": {
+    "amount": 62000,
+    "kind": "taxi"
+  },
+  "status": {
+    "type": "rejected",
+    "rejection": {
+      "type": "officer",
+      "reason": "duplicate_claim",
+      "officer": "KN",
+      "note": "Samme reise er allerede erstattet."
+    },
+    "decidedAt": "2026-11-21T12:30:00Z"
+  },
+  "history": [
+    {
+      "type": "submitted",
+      "at": "2026-11-21T10:00:00Z"
+    },
+    {
+      "type": "sent_to_review",
+      "reasons": [
+        "expenses_claimed"
+      ],
+      "at": "2026-11-21T10:00:00Z"
+    },
+    {
+      "type": "rejected_by_officer",
+      "officer": "KN",
+      "reason": "duplicate_claim",
+      "note": "Samme reise er allerede erstattet.",
+      "at": "2026-11-21T12:30:00Z"
+    }
+  ]
+}

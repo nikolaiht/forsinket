@@ -1,0 +1,23 @@
+{
+  "version": "v1",
+  "claimDeadlineDays": 90,
+  "bands": [
+    {
+      "fromMinutes": 30,
+      "percent": 25
+    },
+    {
+      "fromMinutes": 60,
+      "percent": 50
+    },
+    {
+      "fromMinutes": 120,
+      "percent": 100
+    }
+  ],
+  "expenseMinDelayMinutes": 60,
+  "expenseCap": 80000,
+  "autoApprovalLimit": 100000,
+  "maxTicketPrice": 2000000,
+  "maxClaimedExpenses": 1000000
+}
