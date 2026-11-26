@@ -170,7 +170,7 @@ The app is built to stand open on the internet without a login:
 - Every input has a limit: ticket price, claimed expenses, the length of an officer's note, and 64 KB for a request body.
 - Elm renders text as text. Nothing a user types is treated as HTML.
 - With `DEMO_MODE=true` the service seeds six claims through the normal `submit` and `decide` path, caps the number of stored claims, and can start over from the seed data at an interval. A reset that fails is logged, and the next one is still tried.
-- The time of the last reset is stored in the database, and a service that starts checks whether one is due. A timer inside the service is not enough: a host that stops the service between visits stops the timer too. The store takes a lock while it decides, so two instances that start at the same moment do not both empty it and seed it.
+- The time of the last reset is stored in the database, and a service that starts checks whether one is due. A timer inside the service is not enough: a host that stops the service between visits stops the timer too. A host may also start several instances of the service for one burst of visitors. The store takes a lock while it decides whether to empty itself, so only one of them does. Seeding leaves a claim that is already there as it is, so two instances that seed at the same moment do not get in each other's way, and a seeding that was cut short is finished the next time the service starts.
 - No personal data is asked for. A claim has no name, e-mail or account number. The only free text stored is an officer's initials and note.
 
 ## Testing

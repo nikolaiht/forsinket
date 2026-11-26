@@ -1,17 +1,26 @@
 package io.github.nikolaiht.forsinket.app
 
+import arrow.core.NonEmptyList
 import arrow.core.toNonEmptyListOrNull
 import io.github.nikolaiht.forsinket.app.demo.prepareDemo
 import io.github.nikolaiht.forsinket.app.demo.seedDemoData
+import io.github.nikolaiht.forsinket.app.store.ClaimStore
 import io.github.nikolaiht.forsinket.app.store.PostgresClaimStore
 import io.github.nikolaiht.forsinket.app.traffic.SyntheticTrafficData
+import io.github.nikolaiht.forsinket.domain.ClaimEvent
+import io.github.nikolaiht.forsinket.domain.ClaimId
 import io.github.nikolaiht.forsinket.domain.ClaimState
 import io.github.nikolaiht.forsinket.domain.RulesV1
 import io.github.nikolaiht.forsinket.domain.StatusName
 import io.github.nikolaiht.forsinket.domain.replay
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import java.time.Instant
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
@@ -94,6 +103,44 @@ class DemoDataTest : FunSpec({
         seed()
 
         store.count() shouldBe 7
+    }
+
+    test("seeding a demo that already has its claims adds nothing and changes nothing") {
+        seed()
+        val first = store.summaries(null)
+
+        seed(now.plusSeconds(3600))
+
+        store.summaries(null) shouldBe first
+    }
+
+    test("two services that seed at the same moment do not trip over each other") {
+        coroutineScope {
+            List(2) { async(Dispatchers.IO) { seed() } }.awaitAll()
+        }
+
+        store.count() shouldBe 6
+        store.summaries(null).forEach { summary ->
+            summarize(checkNotNull(snapshotOf(summary.id, store.load(summary.id)))) shouldBe summary
+        }
+    }
+
+    test("a demo whose service stopped halfway through seeding gets the rest of its claims next time") {
+        var appends = 0
+        val stopsAfterThree = object : ClaimStore by store {
+            override fun append(
+                id: ClaimId,
+                expectedVersion: Int,
+                events: NonEmptyList<ClaimEvent>,
+                summary: ClaimSummary,
+            ) = if (++appends > 3) error("the service stopped") else store.append(id, expectedVersion, events, summary)
+        }
+        shouldThrow<IllegalStateException> { seedDemoData(stopsAfterThree, SyntheticTrafficData, RulesV1, now) }
+        store.count() shouldBe 2
+
+        seed()
+
+        store.count() shouldBe 6
     }
 
     test("every seeded claim was submitted before now, and none is too late") {

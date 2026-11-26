@@ -14,6 +14,10 @@ fun dataSource(url: String, user: String, password: String): HikariDataSource =
             username = user
             this.password = password
             maximumPoolSize = 5
+            // One connection is opened at the start, and more when they are
+            // needed. A host may start several instances of the service for
+            // one burst of visitors, and each of them is here only briefly.
+            minimumIdle = 1
         },
     )
 
