@@ -173,6 +173,31 @@ The app is built to stand open on the internet without a login:
 - The time of the last reset is stored in the database, and a service that starts checks whether one is due. A timer inside the service is not enough: a host that stops the service between visits stops the timer too. A host may also start several instances of the service for one burst of visitors. The store takes a lock while it decides whether to empty itself, so only one of them does. Seeding leaves a claim that is already there as it is, so two instances that seed at the same moment do not get in each other's way, and a seeding that was cut short is finished the next time the service starts.
 - No personal data is asked for. A claim has no name, e-mail or account number. The only free text stored is an officer's initials and note.
 
+### Where the hosted copy runs
+
+The hosted copy is on Vercel, with the database at Neon, both in Frankfurt. Vercel builds the repository on every push to `main`, as two services (`vercel.json`):
+
+- **The Elm app** is built with the same `npm run build` as everywhere else and served as static files from the CDN. An address that is not a file gets `index.html`, because the app does its own routing.
+- **`/api` and `/health`** go to the Docker image, run as a container. It is the image `docker compose` and CI run, unchanged. It still has the web app in it, which nobody asks it for here.
+
+Both the container and the database stop when there has been no traffic for five minutes, and start again for the next visitor. A demo that is seldom visited then costs nothing to keep and needs nobody to look after it. The price is the wait for that next visitor, measured on 26 November 2026 after eight minutes without traffic:
+
+| What | Time |
+|---|---|
+| The page and its script, from the CDN | 0.2 s each |
+| The first request to `/api` | 6.0 s |
+| Requests after that | 0.2 s |
+
+The service logs where its own part of the six seconds goes. About 1.9 s pass before the JVM starts at all. Opening the first database connection, which also wakes the database, takes 1.4 s, the migration check 0.6 s, getting the demo ready 0.4 s, and starting Ktor 0.8 s. The rest is the JVM itself.
+
+That is why the page is not served by the service here. When it was, the visitor looked at an empty window for those six seconds. Now the page is there at once and says that it is fetching, which is what the `Loading` state in the Elm model is for.
+
+Two things in the code exist because of this way of running. The time of the last reset is stored, as described above, because the timer never gets to fire. And a database address is read in the form a host hands out: one `postgresql://` address with the user and the password in it. Where a host gives a direct address beside one that goes through its connection pooler, the direct one is used, since the service keeps its own small pool.
+
+Alternative considered: a small machine that is always on. There is no wait then, and the timer works as it is. It also runs day and night for a page that is opened a few times a week. The same image would run there unchanged.
+
+Vercel's container runtime and its services were both in beta when this was written.
+
 ## Testing
 
 - **Kotlin, domain:** unit tests of the rules, the validation and the decider. Property tests: compensation never exceeds the ticket value, a longer delay never pays less, random command sequences only ever move along the state diagram, nothing happens to a claim in a final state, and no officer can make a claim pay more for expenses than was claimed or the rules allow.
@@ -187,6 +212,7 @@ The app is built to stand open on the internet without a login:
 - **Submitting a claim is not idempotent.** The form locks while a claim is on its way, but a request that is sent again by something in between, after the first one was stored, makes a second claim. A real service would take an idempotency key.
 - **The demo's cap on stored claims is soft.** Two submissions at the same moment can both get in under it.
 - **The preview is asked for on every change that leaves the form complete.** There is no debounce. Late answers are dropped, so the result is right, but a slow connection sends more requests than it needs.
+- **The first visitor after a pause waits about six seconds for the numbers** on the hosted copy, as measured above. The start-up could be made shorter. It cannot be made to go away while the service is stopped between visits.
 - **A ticket under 45 øre can give a compensation of zero**, which is then approved. No real ticket is that cheap, so there is no minimum payout rule yet.
 
 ## Open questions

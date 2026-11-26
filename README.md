@@ -30,6 +30,12 @@ That is all it needs: Docker. The app is then on [http://localhost:8080](http://
 - **[Meld krav](http://localhost:8080/krav/nytt)** is the claim form. Pick a departure and a ticket, and the calculation appears before the claim is submitted.
 - **[Saksbehandling](http://localhost:8080/saksbehandling)** is the officers' list. Open a claim that is waiting, decide it, and record the payout.
 
+## The hosted copy
+
+[forsinket.vercel.app](https://forsinket.vercel.app) is built from this repository on every push to `main`. The Elm app is served as static files from Vercel's CDN, and `/api` goes to the same Docker image as above, run as a container. The database is PostgreSQL 18 at Neon. Both are in Frankfurt.
+
+The service and the database stop when nobody has visited for five minutes. The page still appears at once and says that it is fetching. The first numbers after such a pause take about six seconds, while the service starts again, and after that a request takes about 0.2 seconds. The demo starts over from its six claims once a day. The measurements and the reasons are in the [RFC](docs/rfc/0001-delay-compensation-claims.md#where-the-hosted-copy-runs).
+
 ## What it does
 
 - **Looks up the delay.** The passenger picks the departure they travelled on. How late it was is already recorded, so nobody types in a delay.
