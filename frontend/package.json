@@ -1,0 +1,20 @@
+{
+  "name": "forsinket-frontend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "format": "elm-format src tests review/src --yes",
+    "format:check": "elm-format src tests review/src --validate",
+    "review": "elm-review",
+    "test": "elm-test",
+    "contract": "node scripts/generate-contract.mjs && elm-format tests/Contract/Examples.elm --yes",
+    "build": "node scripts/build.mjs",
+    "check": "npm run format:check && npm run review && npm run test && npm run build"
+  },
+  "devDependencies": {
+    "elm": "0.19.3-0",
+    "elm-format": "0.8.8",
+    "elm-review": "2.13.5",
+    "elm-test": "0.19.3-0"
+  }
+}
