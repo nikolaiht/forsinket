@@ -51,5 +51,10 @@ private fun example(rules: RuleSet, ticket: Ticket, expenses: Expenses?, outcome
         scheduledDeparture = LocalTime.of(9, 12),
         outcome = outcome,
     )
-    return Example(ticket, expenses, outcome, assess(rules, ClaimDetails(departure, ticket, expenses), submittedOn = day))
+    return Example(
+        ticket,
+        expenses,
+        outcome,
+        assess(rules, ClaimDetails(departure, ticket, expenses), submittedOn = day),
+    )
 }

@@ -41,7 +41,7 @@ jobs:
           distribution: temurin
           java-version: 25
       - uses: gradle/actions/setup-gradle@v6
-      - name: unit, property and contract tests, and integration tests against PostgreSQL
+      - name: ktlint, unit, property and contract tests, and integration tests against PostgreSQL
         run: ./gradlew check
 
   docker:

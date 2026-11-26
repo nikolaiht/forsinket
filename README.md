@@ -87,7 +87,7 @@ If the two sides drift apart, one of these tests fails.
 make test     # needs JDK 25, Node 22, and Docker for the PostgreSQL the tests start
 ```
 
-- **Kotlin:** unit tests for the rules, the validation and the decider. Property tests with Kotest: a longer delay never pays less, random sequences of commands only ever move a claim the ways the rules allow, nothing more happens to a rejected or paid claim, no officer can make a claim pay more for expenses than was claimed or the rules allow, and whatever is done to a claim, its line in the officers' list is what its events add up to. Integration tests run the store and the whole HTTP API against PostgreSQL in Testcontainers, including a test that forces two writers to race.
+- **Kotlin:** unit tests for the rules, the validation and the decider. Property tests with Kotest: a longer delay never pays less, random sequences of commands only ever move a claim the ways the rules allow, nothing more happens to a rejected or paid claim, no officer can make a claim pay more for expenses than was claimed or the rules allow, and whatever is done to a claim, its line in the officers' list is what its events add up to. Integration tests run the store and the whole HTTP API against PostgreSQL in Testcontainers, including a test that forces two writers to race. ktlint checks the formatting as part of the same build.
 - **Elm:** elm-test, with fuzz tests where a round trip must hold: an amount formatted and parsed again, a route written as an address and parsed again, and any acceptable claim typed into the form and validated. The two pages with forms are tested message by message through `update`: what they show, what they ask for, and answers that arrive late. The pages that only fetch and show are tested for dropping an answer about something else. What an officer is offered is tested against the rendered page, for every status. elm-review and elm-format report no problems.
 - **Together:** CI builds the Docker image, starts it with its database, and [`scripts/smoke.sh`](scripts/smoke.sh) walks two claims through it.
 
@@ -117,6 +117,7 @@ make up          # the whole thing in Docker, on http://localhost:8080
 make test        # every check CI runs, except the Docker smoke test
 make dev         # the service outside Docker, with a development build of the Elm app
 make contract    # copy contract/examples into the Elm test module
+make format      # let ktlint and elm-format rewrite the code the way the checks want it
 make smoke       # walk two claims through the running app
 ```
 

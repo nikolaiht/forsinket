@@ -19,7 +19,11 @@ data class Config(
     val demo: DemoConfig?,
 )
 
-data class DatabaseConfig(val url: String, val user: String, val password: String)
+data class DatabaseConfig(
+    val url: String,
+    val user: String,
+    val password: String,
+)
 
 /**
  * Settings for running as an open demo: seed data when the store is empty, a
@@ -41,7 +45,8 @@ fun configFrom(env: Map<String, String>): EitherNel<String, Config> =
             { required(env, "DATABASE_PASSWORD") },
             { withNel { demo(env) } },
         ) { port, url, user, password, demo ->
-            Config(port, DatabaseConfig(url, user, password), env["WEB_ROOT"]?.takeIf { it.isNotBlank() }?.let(Path::of), demo)
+            val webRoot = env["WEB_ROOT"]?.takeIf { it.isNotBlank() }?.let(Path::of)
+            Config(port, DatabaseConfig(url, user, password), webRoot, demo)
         }
     }
 

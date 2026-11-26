@@ -39,7 +39,7 @@ class ClaimServiceTest : FunSpec({
     fun service(store: ClaimStore, now: Instant = fixtures.submittedA, id: ClaimId = ClaimId(UUID.randomUUID())) =
         ClaimService(store, SyntheticTrafficData, RulesV1, TestClock(now), newId = { id }, maxClaims = null)
 
-    test("a writer that gets in between the read and the write is reported as a conflict, like one that got in before") {
+    test("a writer that gets in between the read and the write is reported as a conflict") {
         // The claim is at version 2 when it is read, and at version 3 by the time the decision is written.
         val store = object : ClaimStore by InMemoryClaimStore() {
             override fun load(id: ClaimId): List<ClaimEvent> = fixtures.awaitingReview.events

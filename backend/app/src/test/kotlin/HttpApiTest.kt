@@ -165,7 +165,8 @@ class HttpApiTest : FunSpec({
         test("a delay under the threshold is rejected by the rules, and still recorded") {
             withApi(listOf(fixtures.idC)) {
                 clock.now = fixtures.submittedC
-                val body = """{"departureId":"2026-11-20-TB17","ticket":{"type":"single","price":34900},"expenses":null}"""
+                val body =
+                    """{"departureId":"2026-11-20-TB17","ticket":{"type":"single","price":34900},"expenses":null}"""
 
                 val submitted = post("/api/claims", body)
 
@@ -260,7 +261,8 @@ class HttpApiTest : FunSpec({
             withApi {
                 listOf(ContentType.Text.Plain, ContentType.Application.FormUrlEncoded, null).forEach { type ->
                     withClue(type.toString()) {
-                        val response = postAs(type, "/api/claims", contractExample("claim-request.single.json").toString())
+                        val response =
+                            postAs(type, "/api/claims", contractExample("claim-request.single.json").toString())
 
                         response.status shouldBe HttpStatusCode.BadRequest
                         response.json() shouldBe contractExample("error.malformed-request.json")
@@ -279,7 +281,8 @@ class HttpApiTest : FunSpec({
                 val response = post("/api/claims/${fixtures.idB.value}/decision", withNul)
 
                 response.status shouldBe HttpStatusCode.UnprocessableEntity
-                response.json().field("errors").jsonArray.map { it.field("field").jsonPrimitive.content } shouldBe listOf("note")
+                response.json().field("errors").jsonArray.map { it.field("field").jsonPrimitive.content } shouldBe
+                    listOf("note")
             }
         }
 
@@ -348,7 +351,8 @@ class HttpApiTest : FunSpec({
             withApi(listOf(fixtures.idA)) {
                 postExample("/api/claims", "claim-request.single.json")
 
-                val response = postExample("/api/claims/${fixtures.idA.value}/decision", "decision-request.approve.json")
+                val response =
+                    postExample("/api/claims/${fixtures.idA.value}/decision", "decision-request.approve.json")
 
                 response.status shouldBe HttpStatusCode.Conflict
                 response.json() shouldBe contractExample("error.invalid-transition.json")
@@ -416,8 +420,8 @@ class HttpApiTest : FunSpec({
                 post("/api/claims", """{"departureId":"2026-11-20-TB17","ticket":{"type":"single","price":34900}}""")
 
                 get("/api/claims").json() shouldBe contractExample("claims.summaries.json")
-                get("/api/claims?status=awaiting_review").json().jsonArray.map { it.field("id").jsonPrimitive.content } shouldBe
-                    listOf(fixtures.idB.value.toString())
+                val waiting = get("/api/claims?status=awaiting_review").json().jsonArray
+                waiting.map { it.field("id").jsonPrimitive.content } shouldBe listOf(fixtures.idB.value.toString())
                 get("/api/claims?status=paid_out").json() shouldBe JsonArray(emptyList())
             }
         }
@@ -458,7 +462,8 @@ class HttpApiTest : FunSpec({
             withApi {
                 clock.now = Instant.parse("2026-11-20T12:00:00Z") // 13:00 in Oslo
 
-                get("/api/departures?date=2026-11-20").json().jsonArray.map { it.field("trainNumber").jsonPrimitive.content } shouldBe
+                val departures = get("/api/departures?date=2026-11-20").json().jsonArray
+                departures.map { it.field("trainNumber").jsonPrimitive.content } shouldBe
                     listOf("TB11", "TB12", "TB13", "TB14")
             }
         }
@@ -505,7 +510,12 @@ class HttpApiTest : FunSpec({
 
         test("is served for every page address, so a reload or a shared link works") {
             withApi {
-                listOf("/krav/nytt", "/krav/${UUID.randomUUID()}", "/saksbehandling", "/saksbehandling?status=alle").forEach { path ->
+                listOf(
+                    "/krav/nytt",
+                    "/krav/${UUID.randomUUID()}",
+                    "/saksbehandling",
+                    "/saksbehandling?status=alle",
+                ).forEach { path ->
                     val response = get(path)
 
                     response.status shouldBe HttpStatusCode.OK
@@ -526,9 +536,11 @@ class HttpApiTest : FunSpec({
 
     test("a bug, or a database that is gone, answers with an error the app can read, and gives nothing away") {
         val broken = object : ClaimStore by InMemoryClaimStore() {
-            override fun load(id: ClaimId): List<ClaimEvent> = throw IllegalStateException("connection refused: db:5432")
+            override fun load(id: ClaimId): List<ClaimEvent> =
+                throw IllegalStateException("connection refused: db:5432")
         }
-        val service = ClaimService(broken, SyntheticTrafficData, RulesV1, TestClock(fixtures.submittedA), { fixtures.idA }, null)
+        val service =
+            ClaimService(broken, SyntheticTrafficData, RulesV1, TestClock(fixtures.submittedA), { fixtures.idA }, null)
 
         runTestApplication {
             application { module(service, webRoot) }

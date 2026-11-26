@@ -65,7 +65,12 @@ object ContractFixtures {
     const val DUPLICATE_NOTE = "Samme reise er allerede erstattet."
 
     private val approve500 =
-        ClaimCommand.Decide(OfficerDecision.Approve(Money.ofKroner(500)), officerId("KN"), note(RECEIPT_NOTE), decidedAt)
+        ClaimCommand.Decide(
+            OfficerDecision.Approve(Money.ofKroner(500)),
+            officerId("KN"),
+            note(RECEIPT_NOTE),
+            decidedAt,
+        )
     private val rejectDuplicate =
         ClaimCommand.Decide(
             OfficerDecision.Reject(RejectionReason.DUPLICATE_CLAIM),

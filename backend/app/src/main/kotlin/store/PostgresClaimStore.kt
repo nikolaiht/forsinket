@@ -35,7 +35,9 @@ class PostgresClaimStore(private val dataSource: DataSource) : ClaimStore {
             ).use { statement ->
                 statement.setObject(1, id.value)
                 statement.executeQuery().use { rows ->
-                    rows.map { StoredJson.decodeFromString(StoredEvent.serializer(), it.getString("payload")).toDomain() }
+                    rows.map {
+                        StoredJson.decodeFromString(StoredEvent.serializer(), it.getString("payload")).toDomain()
+                    }
                 }
             }
         }

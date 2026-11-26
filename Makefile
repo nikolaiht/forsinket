@@ -5,7 +5,7 @@
 
 DEV_DATABASE = DATABASE_URL=jdbc:postgresql://localhost:54320/forsinket DATABASE_USER=forsinket DATABASE_PASSWORD=forsinket
 
-.PHONY: up down test backend frontend contract contract-check smoke dev
+.PHONY: up down test backend frontend contract contract-check format smoke dev
 
 up: ## build and start the database and the app on http://localhost:8080
 	docker compose up --build
@@ -15,7 +15,7 @@ down:
 
 test: backend frontend contract-check ## everything CI checks, except the Docker smoke test
 
-backend: ## unit, property and integration tests (needs Docker for PostgreSQL)
+backend: ## ktlint, and unit, property and integration tests (needs Docker for PostgreSQL)
 	cd backend && ./gradlew check
 
 frontend: frontend/node_modules ## formatting, elm-review, tests and the optimised build
@@ -26,6 +26,10 @@ contract: frontend/node_modules ## copy contract/examples into the Elm test modu
 
 contract-check: contract ## fail if the committed Elm copy of the contract examples was out of date
 	git diff --exit-code -- frontend/tests/Contract/Examples.elm
+
+format: frontend/node_modules ## let ktlint and elm-format rewrite the code the way the checks want it
+	cd backend && ./gradlew ktlintFormat
+	cd frontend && npm run format
 
 smoke: ## walk two claims through the running app (after `make up` or `docker compose up -d --wait`)
 	./scripts/smoke.sh

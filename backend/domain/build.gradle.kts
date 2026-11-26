@@ -2,6 +2,7 @@
 // arrow-core, and on nothing that does I/O: no Ktor, no JDBC, no serialization.
 plugins {
     alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.ktlint)
     `java-test-fixtures`
 }
 
@@ -10,6 +11,10 @@ kotlin {
     compilerOptions {
         allWarningsAsErrors = true
     }
+}
+
+ktlint {
+    version = libs.versions.ktlint
 }
 
 dependencies {

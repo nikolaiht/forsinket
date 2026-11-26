@@ -118,7 +118,11 @@ sealed interface DecidedBy {
 sealed interface Rejection {
     data class ByRules(val reason: IneligibilityReason) : Rejection
 
-    data class ByOfficer(val reason: RejectionReason, val officer: OfficerId, val note: Note) : Rejection
+    data class ByOfficer(
+        val reason: RejectionReason,
+        val officer: OfficerId,
+        val note: Note,
+    ) : Rejection
 }
 
 enum class StatusName { RECEIVED, AWAITING_REVIEW, APPROVED, REJECTED, PAID_OUT }
@@ -139,10 +143,7 @@ sealed interface ClaimState {
     }
 
     /** Received, with the outcome of the assessment still to come in the next event. */
-    data class Received(
-        override val claim: ClaimDetails,
-        override val submittedAt: Instant,
-    ) : Filed {
+    data class Received(override val claim: ClaimDetails, override val submittedAt: Instant) : Filed {
         override val status: StatusName get() = StatusName.RECEIVED
     }
 

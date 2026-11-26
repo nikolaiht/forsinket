@@ -62,7 +62,10 @@ class StoredEventFormatTest : FunSpec({
         "approved-automatically.json" to
             ClaimEvent.ApprovedAutomatically(calculationA, Instant.parse("2026-11-21T09:15:00Z")),
         "rejected-automatically.json" to
-            ClaimEvent.RejectedAutomatically(IneligibilityReason.SUBMITTED_TOO_LATE, Instant.parse("2027-03-01T08:00:00Z")),
+            ClaimEvent.RejectedAutomatically(
+                IneligibilityReason.SUBMITTED_TOO_LATE,
+                Instant.parse("2027-03-01T08:00:00Z"),
+            ),
         "sent-to-review.json" to
             ClaimEvent.SentToReview(
                 calculationB,

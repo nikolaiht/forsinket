@@ -155,7 +155,10 @@ class PostgresClaimStoreTest : FunSpec({
             PostgresTestDatabase.dataSource.connection.use { connection ->
                 connection.prepareStatement("SELECT count(*) FROM pg_locks WHERE NOT granted").use { statement ->
                     while (System.nanoTime() < deadline) {
-                        val blocked = statement.executeQuery().use { it.next(); it.getInt(1) }
+                        val blocked = statement.executeQuery().use {
+                            it.next()
+                            it.getInt(1)
+                        }
                         if (blocked > 0) return
                         Thread.sleep(20)
                     }

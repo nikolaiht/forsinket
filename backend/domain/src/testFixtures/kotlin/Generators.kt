@@ -2,6 +2,7 @@ package io.github.nikolaiht.forsinket.domain
 
 import arrow.core.Either
 import arrow.core.NonEmptyList
+import arrow.core.getOrElse
 import arrow.core.nonEmptyListOf
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.Codepoint
@@ -34,14 +35,11 @@ fun departure(outcome: Outcome, date: LocalDate = exampleDate): Departure =
         outcome = outcome,
     )
 
-fun departure(delayMinutes: Int, date: LocalDate = exampleDate): Departure =
-    departure(Outcome.Ran(delayMinutes), date)
+fun departure(delayMinutes: Int, date: LocalDate = exampleDate): Departure = departure(Outcome.Ran(delayMinutes), date)
 
-fun cancelledDeparture(date: LocalDate = exampleDate): Departure =
-    departure(Outcome.Cancelled, date)
+fun cancelledDeparture(date: LocalDate = exampleDate): Departure = departure(Outcome.Cancelled, date)
 
-fun Arb.Companion.money(range: LongRange): Arb<Money> =
-    Arb.long(range).map(Money::ofOre)
+fun Arb.Companion.money(range: LongRange): Arb<Money> = Arb.long(range).map(Money::ofOre)
 
 /** Any ticket the validation accepts: a price from 1 øre up to the cap. */
 fun Arb.Companion.ticket(): Arb<Ticket> =
@@ -75,21 +73,23 @@ fun Arb.Companion.claimDetails(date: Arb<LocalDate> = Arb.constant(exampleDate))
     }
 
 /** Any day in 2026. */
-fun Arb.Companion.dateIn2026(): Arb<LocalDate> =
-    Arb.int(0..364).map { LocalDate.of(2026, 1, 1).plusDays(it.toLong()) }
+fun Arb.Companion.dateIn2026(): Arb<LocalDate> = Arb.int(0..364).map { LocalDate.of(2026, 1, 1).plusDays(it.toLong()) }
 
 /** Any millisecond in 2026: the precision the service records. */
-fun Arb.Companion.instant(): Arb<Instant> =
-    Arb.long(1_767_225_600_000L..1_798_761_599_999L).map(Instant::ofEpochMilli)
+fun Arb.Companion.instant(): Arb<Instant> = Arb.long(1_767_225_600_000L..1_798_761_599_999L).map(Instant::ofEpochMilli)
 
-fun Arb.Companion.officerId(): Arb<OfficerId> =
-    Arb.string(2..10, Codepoint.az()).map(::officerId)
+fun Arb.Companion.officerId(): Arb<OfficerId> = Arb.string(2..10, Codepoint.az()).map(::officerId)
 
 /** Notes with the characters that are easy to get wrong in JSON and SQL. */
 fun Arb.Companion.note(): Arb<Note> =
     Arb.choice(
         Arb.string(0..80),
-        Arb.of("Kvitteringen viser 500 kr.", "Æ, ø og å. «Sitat» – og tankestrek.", "To\nlinjer", "'; DROP TABLE claim_events; --"),
+        Arb.of(
+            "Kvitteringen viser 500 kr.",
+            "Æ, ø og å. «Sitat» – og tankestrek.",
+            "To\nlinjer",
+            "'; DROP TABLE claim_events; --",
+        ),
     ).map(::note)
 
 fun Arb.Companion.officerDecision(): Arb<OfficerDecision> =
@@ -174,11 +174,9 @@ fun Arb.Companion.claimEvent(): Arb<ClaimEvent> =
     )
 
 fun officerId(raw: String): OfficerId =
-    OfficerId.parse(raw).fold({ error("not a valid officer id in a test: $raw") }, { it })
+    OfficerId.parse(raw).getOrElse { error("not a valid officer id in a test: $raw") }
 
-fun note(raw: String): Note =
-    Note.parse(raw).fold({ error("not a valid note in a test: $raw") }, { it })
+fun note(raw: String): Note = Note.parse(raw).getOrElse { error("not a valid note in a test: $raw") }
 
 /** The value of an Either that must be a Right, with the Left in the message when it is not. */
-fun <A, B> Either<A, B>.shouldBeRight(): B =
-    fold({ throw AssertionError("expected a Right, but got Left($it)") }, { it })
+fun <A, B> Either<A, B>.shouldBeRight(): B = getOrElse { throw AssertionError("expected a Right, but got Left($it)") }

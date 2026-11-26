@@ -137,7 +137,10 @@ class DeciderTest : FunSpec({
                     claimB,
                     submittedAt,
                     calculationB.copy(
-                        expenses = ExpenseAssessment.Covered(claimed = Money.ofOre(62000), approved = Money.ofOre(50000)),
+                        expenses = ExpenseAssessment.Covered(
+                            claimed = Money.ofOre(62000),
+                            approved = Money.ofOre(50000),
+                        ),
                     ),
                     DecidedBy.Officer(kn, receiptNote),
                     decidedAt,

@@ -19,11 +19,7 @@ import io.github.nikolaiht.forsinket.domain.ClaimCommand.Submit
  * anything; the shell around the domain loads the events, calls these, and
  * saves what [decide] returned.
  */
-fun decide(
-    rules: RuleSet,
-    state: ClaimState,
-    command: ClaimCommand,
-): Either<ClaimError, NonEmptyList<ClaimEvent>> =
+fun decide(rules: RuleSet, state: ClaimState, command: ClaimCommand): Either<ClaimError, NonEmptyList<ClaimEvent>> =
     either {
         when (state) {
             ClaimState.NotSubmitted ->
@@ -148,8 +144,7 @@ fun evolve(state: ClaimState, event: ClaimEvent): ClaimState =
             }
     }
 
-fun replay(events: List<ClaimEvent>): ClaimState =
-    events.fold(ClaimState.NotSubmitted, ::evolve)
+fun replay(events: List<ClaimEvent>): ClaimState = events.fold(ClaimState.NotSubmitted, ::evolve)
 
 /**
  * An event that does not fit the state it is applied to cannot have come from

@@ -129,7 +129,12 @@ fun StoredEvent.toDomain(): ClaimEvent {
             ClaimEvent.ApprovedByOfficer(storedOfficer(officer), Money.ofOre(approvedExpenses), storedNote(note), at)
 
         is StoredEvent.RejectedByOfficer ->
-            ClaimEvent.RejectedByOfficer(storedOfficer(officer), storedEnum<RejectionReason>(reason), storedNote(note), at)
+            ClaimEvent.RejectedByOfficer(
+                storedOfficer(officer),
+                storedEnum<RejectionReason>(reason),
+                storedNote(note),
+                at,
+            )
 
         is StoredEvent.PayoutRecorded ->
             ClaimEvent.PayoutRecorded(at)
@@ -140,4 +145,6 @@ private fun storedOfficer(raw: String): OfficerId =
     OfficerId.parse(raw).getOrElse { error("corrupt stored data: '$raw' is not an officer id") }
 
 private fun storedNote(raw: String): Note =
-    Note.parse(raw).getOrElse { error("corrupt stored data: a stored note is not a valid note") }
+    Note.parse(raw).getOrElse {
+        error("corrupt stored data: a stored note is not a valid note")
+    }

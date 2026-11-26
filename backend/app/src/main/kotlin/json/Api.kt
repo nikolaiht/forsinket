@@ -77,7 +77,11 @@ sealed interface RejectionDto {
 
     @Serializable
     @SerialName("officer")
-    data class ByOfficer(val reason: String, val officer: String, val note: String) : RejectionDto
+    data class ByOfficer(
+        val reason: String,
+        val officer: String,
+        val note: String,
+    ) : RejectionDto
 }
 
 /** Each status carries the data that exists in it, and nothing else. */
@@ -93,7 +97,11 @@ sealed interface StatusDto {
 
     @Serializable
     @SerialName("approved")
-    data class Approved(val calculation: CalculationDto, val by: DecidedByDto, val decidedAt: String) : StatusDto
+    data class Approved(
+        val calculation: CalculationDto,
+        val by: DecidedByDto,
+        val decidedAt: String,
+    ) : StatusDto
 
     @Serializable
     @SerialName("rejected")
@@ -342,8 +350,7 @@ private fun ClaimEvent.toHistoryEntry(): HistoryEntryDto =
             HistoryEntryDto.PayoutRecorded(at.toString())
     }
 
-fun Example.toDto(): ExampleDto =
-    ExampleDto(ticket.toDto(), expenses?.toDto(), outcome.toDto(), assessment.toDto())
+fun Example.toDto(): ExampleDto = ExampleDto(ticket.toDto(), expenses?.toDto(), outcome.toDto(), assessment.toDto())
 
 fun ClaimSummary.toDto(): SummaryDto =
     SummaryDto(
@@ -356,8 +363,7 @@ fun ClaimSummary.toDto(): SummaryDto =
         total = total?.ore,
     )
 
-fun FieldError.toDto(): FieldErrorDto =
-    FieldErrorDto(field.path, code.wireName)
+fun FieldError.toDto(): FieldErrorDto = FieldErrorDto(field.path, code.wireName)
 
 /** Where a field sits in the request body, so a client can show the error next to the right input. */
 private val Field.path: String
@@ -376,16 +382,14 @@ private val Field.path: String
 
 // Requests to drafts. Nothing is checked here: the domain validates drafts.
 
-fun ClaimRequestDto.toDraft(): ClaimDraft =
-    ClaimDraft(departureId, ticket.toDraft(), expenses?.toDraft())
+fun ClaimRequestDto.toDraft(): ClaimDraft = ClaimDraft(departureId, ticket.toDraft(), expenses?.toDraft())
 
 fun DecisionRequestDto.toDraft(): DecisionDraft =
     DecisionDraft(
         officer = officer,
         note = note,
-        decision =
-            when (decision) {
-                is DecisionChoiceDto.Approve -> DecisionChoiceDraft.Approve(decision.approvedExpenses)
-                is DecisionChoiceDto.Reject -> DecisionChoiceDraft.Reject(decision.reason)
-            },
+        decision = when (decision) {
+            is DecisionChoiceDto.Approve -> DecisionChoiceDraft.Approve(decision.approvedExpenses)
+            is DecisionChoiceDto.Reject -> DecisionChoiceDraft.Reject(decision.reason)
+        },
     )

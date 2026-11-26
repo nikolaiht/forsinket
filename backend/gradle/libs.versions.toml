@@ -10,6 +10,8 @@ postgresql = "42.7.15"
 hikari = "7.1.0"
 testcontainers = "2.0.5"
 logback = "1.6.8"
+ktlintPlugin = "14.2.0"
+ktlint = "1.8.0"
 
 [libraries]
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
@@ -40,3 +42,4 @@ testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgr
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintPlugin" }

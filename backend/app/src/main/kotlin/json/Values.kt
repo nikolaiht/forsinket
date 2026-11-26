@@ -67,7 +67,11 @@ sealed interface TicketValueDto {
 
     @Serializable
     @SerialName("per_day")
-    data class PerDay(val price: Long, val days: Int, val value: Long) : TicketValueDto
+    data class PerDay(
+        val price: Long,
+        val days: Int,
+        val value: Long,
+    ) : TicketValueDto
 }
 
 @Serializable
@@ -109,8 +113,7 @@ fun Ticket.toDto(): TicketDto =
         is Ticket.Period -> TicketDto.Period(price.ore, validity.days)
     }
 
-fun Expenses.toDto(): ExpensesDto =
-    ExpensesDto(amount.ore, kind.wireName)
+fun Expenses.toDto(): ExpensesDto = ExpensesDto(amount.ore, kind.wireName)
 
 fun Outcome.toDto(): OutcomeDto =
     when (this) {
@@ -162,8 +165,7 @@ fun TicketDto.toDraft(): TicketDraft =
         is TicketDto.Period -> TicketDraft.Period(price, validityDays)
     }
 
-fun ExpensesDto.toDraft(): ExpensesDraft =
-    ExpensesDraft(amount, kind)
+fun ExpensesDto.toDraft(): ExpensesDraft = ExpensesDraft(amount, kind)
 
 // Stored JSON back to the domain. This is data the service wrote itself, so
 // anything it cannot read is corruption and fails loudly.
@@ -181,8 +183,7 @@ fun TicketDto.toDomain(): Ticket =
             )
     }
 
-fun ExpensesDto.toDomain(): Expenses =
-    Expenses(Money.ofOre(amount), storedEnum<ExpenseKind>(kind))
+fun ExpensesDto.toDomain(): Expenses = Expenses(Money.ofOre(amount), storedEnum<ExpenseKind>(kind))
 
 fun OutcomeDto.toDomain(): Outcome =
     when (this) {

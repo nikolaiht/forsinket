@@ -48,7 +48,11 @@ sealed interface TicketValue {
 
     data class FullPrice(override val value: Money) : TicketValue
 
-    data class PerDay(val price: Money, val days: Int, override val value: Money) : TicketValue
+    data class PerDay(
+        val price: Money,
+        val days: Int,
+        override val value: Money,
+    ) : TicketValue
 }
 
 sealed interface ExpenseAssessment {

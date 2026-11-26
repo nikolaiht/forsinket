@@ -46,8 +46,7 @@ data class Departure(
      * time the timetable is written in. Until then there is nothing to claim
      * for: a train cannot be late before it was meant to go.
      */
-    fun wasDueBy(now: LocalDateTime): Boolean =
-        !date.atTime(scheduledDeparture).isAfter(now)
+    fun wasDueBy(now: LocalDateTime): Boolean = !date.atTime(scheduledDeparture).isAfter(now)
 }
 
 /**

@@ -14,8 +14,7 @@ fun interface TrafficData {
 }
 
 /** A departure id starts with its date, so the day to search is in the id itself. */
-fun TrafficData.find(id: DepartureId): Departure? =
-    dateOf(id)?.let { date -> departuresOn(date).find { it.id == id } }
+fun TrafficData.find(id: DepartureId): Departure? = dateOf(id)?.let { date -> departuresOn(date).find { it.id == id } }
 
 private fun dateOf(id: DepartureId): LocalDate? =
     try {

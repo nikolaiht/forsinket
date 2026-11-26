@@ -65,7 +65,9 @@ class ConfigTest : FunSpec({
     }
 
     test("numbers outside their range are problems") {
-        val env = database + mapOf("PORT" to "0", "DEMO_MODE" to "true", "DEMO_MAX_CLAIMS" to "0", "DEMO_RESET_MINUTES" to "-5")
+        val env =
+            database +
+                mapOf("PORT" to "0", "DEMO_MODE" to "true", "DEMO_MAX_CLAIMS" to "0", "DEMO_RESET_MINUTES" to "-5")
 
         configFrom(env) shouldBe
             nonEmptyListOf(

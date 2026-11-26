@@ -16,11 +16,11 @@ import io.github.nikolaiht.forsinket.domain.ClaimDraft
 import io.github.nikolaiht.forsinket.domain.ClaimError
 import io.github.nikolaiht.forsinket.domain.ClaimId
 import io.github.nikolaiht.forsinket.domain.DecisionDraft
+import io.github.nikolaiht.forsinket.domain.Departure
 import io.github.nikolaiht.forsinket.domain.DepartureId
 import io.github.nikolaiht.forsinket.domain.ErrorCode
 import io.github.nikolaiht.forsinket.domain.Field
 import io.github.nikolaiht.forsinket.domain.FieldError
-import io.github.nikolaiht.forsinket.domain.Departure
 import io.github.nikolaiht.forsinket.domain.RuleSet
 import io.github.nikolaiht.forsinket.domain.StatusName
 import io.github.nikolaiht.forsinket.domain.assess
@@ -99,8 +99,7 @@ class ClaimService(
             ensureNotNull(snapshotOf(id, io { store.load(id) })) { ApiError.NotFound }
         }
 
-    suspend fun list(status: StatusName?): List<ClaimSummary> =
-        io { store.summaries(status) }
+    suspend fun list(status: StatusName?): List<ClaimSummary> = io { store.summaries(status) }
 
     suspend fun decide(id: ClaimId, expectedVersion: Int, draft: DecisionDraft): Either<ApiError, ClaimSnapshot> =
         either {
@@ -167,5 +166,4 @@ private fun apiError(error: ClaimError): ApiError =
     }
 
 /** JDBC blocks, so calls to the store are moved off the threads that serve requests. */
-private suspend fun <T> io(block: () -> T): T =
-    withContext(Dispatchers.IO) { block() }
+private suspend fun <T> io(block: () -> T): T = withContext(Dispatchers.IO) { block() }

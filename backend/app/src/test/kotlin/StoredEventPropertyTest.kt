@@ -1,7 +1,7 @@
 package io.github.nikolaiht.forsinket.app
 
-import io.github.nikolaiht.forsinket.app.json.StoredJson
 import io.github.nikolaiht.forsinket.app.json.StoredEvent
+import io.github.nikolaiht.forsinket.app.json.StoredJson
 import io.github.nikolaiht.forsinket.app.json.toDomain
 import io.github.nikolaiht.forsinket.app.json.toStored
 import io.github.nikolaiht.forsinket.domain.claimEvent

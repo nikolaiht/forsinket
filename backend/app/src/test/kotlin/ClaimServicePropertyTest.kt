@@ -11,9 +11,9 @@ import io.github.nikolaiht.forsinket.domain.ExpensesDraft
 import io.github.nikolaiht.forsinket.domain.RejectionReason
 import io.github.nikolaiht.forsinket.domain.RulesV1
 import io.github.nikolaiht.forsinket.domain.TicketDraft
-import io.github.nikolaiht.forsinket.domain.wireName
 import io.github.nikolaiht.forsinket.domain.replay
 import io.github.nikolaiht.forsinket.domain.shouldBeRight
+import io.github.nikolaiht.forsinket.domain.wireName
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb

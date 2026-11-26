@@ -13,7 +13,12 @@ import java.time.LocalTime
  * what happened on it.
  */
 object SyntheticTrafficData : TrafficData {
-    private data class Service(val trainNumber: String, val departs: LocalTime, val origin: String, val destination: String)
+    private data class Service(
+        val trainNumber: String,
+        val departs: LocalTime,
+        val origin: String,
+        val destination: String,
+    )
 
     private const val FJORDVIK = "Fjordvik"
     private const val STORHAVN = "Storhavn"

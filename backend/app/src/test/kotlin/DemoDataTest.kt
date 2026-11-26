@@ -1,5 +1,6 @@
 package io.github.nikolaiht.forsinket.app
 
+import arrow.core.toNonEmptyListOrNull
 import io.github.nikolaiht.forsinket.app.demo.seedDemoData
 import io.github.nikolaiht.forsinket.app.demo.seedIfEmpty
 import io.github.nikolaiht.forsinket.app.store.PostgresClaimStore
@@ -8,7 +9,6 @@ import io.github.nikolaiht.forsinket.domain.ClaimState
 import io.github.nikolaiht.forsinket.domain.RulesV1
 import io.github.nikolaiht.forsinket.domain.StatusName
 import io.github.nikolaiht.forsinket.domain.replay
-import arrow.core.toNonEmptyListOrNull
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.shouldBe

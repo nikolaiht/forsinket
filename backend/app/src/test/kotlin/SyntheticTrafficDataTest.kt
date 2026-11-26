@@ -27,8 +27,11 @@ class SyntheticTrafficDataTest : FunSpec({
     test("odd train numbers run from Fjordvik, even ones from Storhavn") {
         val departures = SyntheticTrafficData.departuresOn(friday)
 
-        departures.first { it.trainNumber == "TB11" }.let { (it.origin to it.destination) shouldBe ("Fjordvik" to "Storhavn") }
-        departures.first { it.trainNumber == "TB16" }.let { (it.origin to it.destination) shouldBe ("Storhavn" to "Fjordvik") }
+        val tb11 = departures.first { it.trainNumber == "TB11" }
+        val tb16 = departures.first { it.trainNumber == "TB16" }
+
+        (tb11.origin to tb11.destination) shouldBe ("Fjordvik" to "Storhavn")
+        (tb16.origin to tb16.destination) shouldBe ("Storhavn" to "Fjordvik")
     }
 
     test("the outcomes of 20 November 2026 are the ones the contract examples use") {
@@ -54,7 +57,14 @@ class SyntheticTrafficDataTest : FunSpec({
     }
 
     test("an id that is not a departure is not found") {
-        listOf("garbage", "", "2026-11-20", "2026-11-20-XX99", "2026-13-45-TB11", "2026-11-20-TB16-extra").forEach { id ->
+        listOf(
+            "garbage",
+            "",
+            "2026-11-20",
+            "2026-11-20-XX99",
+            "2026-13-45-TB11",
+            "2026-11-20-TB16-extra",
+        ).forEach { id ->
             SyntheticTrafficData.find(DepartureId(id)) shouldBe null
         }
     }
@@ -74,6 +84,15 @@ class SyntheticTrafficDataTest : FunSpec({
             .map { it.outcome }
 
         delays shouldContainAll
-            listOf(Outcome.Ran(0), Outcome.Ran(29), Outcome.Ran(30), Outcome.Ran(59), Outcome.Ran(60), Outcome.Ran(119), Outcome.Ran(120), Outcome.Cancelled)
+            listOf(
+                Outcome.Ran(0),
+                Outcome.Ran(29),
+                Outcome.Ran(30),
+                Outcome.Ran(59),
+                Outcome.Ran(60),
+                Outcome.Ran(119),
+                Outcome.Ran(120),
+                Outcome.Cancelled,
+            )
     }
 })
