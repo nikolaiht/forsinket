@@ -2,6 +2,8 @@
 
 A demo: passengers claim compensation for a delayed or cancelled train, and the app shows how the amount was worked out. The train operator is made up. The frontend is written in Elm and the backend in Kotlin.
 
+[![ci](https://github.com/nikolaiht/forsinket/actions/workflows/ci.yml/badge.svg)](https://github.com/nikolaiht/forsinket/actions/workflows/ci.yml)
+
 ![A paid-out claim: the status, the calculation set out step by step like a receipt, the journey, and the record of what has happened](docs/screenshot.png)
 
 One claim, as the passenger sees it. The interface is in Norwegian. The train was cancelled, so the ticket is refunded in full. The passenger also claimed 620 kr for a taxi, and a claims officer (the member of staff who handles the claim) covered 500 kr of it. The page shows how the sum was reached, step by step, and everything that has happened to the claim.
